@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+'use strict';
+
+const winston = require('winston');
+const config = require('config');
+
+// Setup Caching strategy
+const strategyConfig = config.get('strategy');
+const strategy = require(`catbox-${strategyConfig.plugin}`);
+const cache = Object.assign({ engine: strategy }, strategyConfig[strategyConfig.plugin]);
+
+const httpd = config.get('httpd');
+const auth = config.get('auth');
+const builds = config.get('builds');
+
+require('../')({
+    cache,
+    httpd,
+    builds,
+    auth
+}, (err, server) => {
+    if (err) {
+        winston.error(err);
+
+        return process.exit(1);
+    }
+
+    return winston.info('Server running at %s', server.info.uri);
+});

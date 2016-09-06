@@ -1,0 +1,38 @@
+# All values in this document are the ENVIRONMENT variable names that can override the defaults
+# from `default.yaml`
+---
+auth:
+    # A public key for verifying JWTs signed by api.screwdriver.cd
+    jwtPublicKey: SECRET_JWT_PUBLIC_KEY
+
+httpd:
+    # Port to listen on
+    port: PORT
+    # Host to listen on (set to 0.0.0.0 to accept all connections)
+    host: HOST
+    # Externally routable URI (usually your load balancer or CNAME)
+    uri: URI
+    tls:
+        key: HTTPS_PRIVATE_KEY
+        cert: HTTPS_PRIVATE_CERT
+
+builds:
+    # How long should builds stay around for
+    expiresInSec: BUILDS_EXPIRE_TIME
+    # Upper limit on incoming uploads to builds
+    maxByteSize: BUILDS_MAX_BYTES
+
+strategy:
+    plugin: STRATEGY
+    memory:
+        # Upper limit on the number of bytes that can be stored in the cache
+        maxByteSize: MEMORY_MAX_BYTES
+    s3:
+        # Amazon access key
+        accessKeyId: S3_ACCESS_KEY_ID
+        # Amazon secret access key
+        secretAccessKey: S3_ACCESS_KEY_SECRET
+        # Amazon S3 region
+        region: S3_REGION
+        # Amazon S3 bucket that you have write access to
+        bucket: S3_BUCKET
