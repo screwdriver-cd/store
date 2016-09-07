@@ -1,0 +1,52 @@
+---
+
+auth:
+    # A public key for verifying JWTs signed by api.screwdriver.cd
+    jwtPublicKey: |
+        -----BEGIN PUBLIC KEY-----
+        INSERT STUFF HERE
+        -----END PUBLIC KEY-----
+
+httpd:
+    # Port to listen on
+    port: 80
+    # Host to listen on (set to localhost to only accept connections from this machine)
+    host: 0.0.0.0
+    # Externally routable URI (usually your load balancer or CNAME)
+    uri: http://localhost
+    # SSL Support
+    tls: false
+        # If you want SSL, you can easily add it by replacing `tls: false` with an object that
+        # provides the options required by `tls.createServer`
+        # https://nodejs.org/api/tls.html#tls_tls_createserver_options_secureconnectionlistener
+        # key: |
+        #     -----BEGIN RSA PRIVATE KEY-----
+        #     INSERT STUFF HERE
+        #     -----END RSA PRIVATE KEY-----
+        # cert: |
+        #     -----BEGIN CERTIFICATE-----
+        #     INSERT STUFF HERE
+        #     -----END CERTIFICATE-----
+
+builds:
+    # How long should builds stay around for
+    expiresInSec: 1814400000 # 3 weeks
+    # Upper limit on incoming uploads to builds
+    maxByteSize: 1073741824 # 1GB
+
+strategy:
+    plugin: memory
+    memory:
+        # Upper limit on the number of bytes that can be stored in the cache
+        maxByteSize: 1073741824 # 1GB
+        # Basically, always set this to true
+        allowMixedContent: true
+    s3:
+        # Amazon access key
+        accessKeyId: YOUR-KEY-ID
+        # Amazon secret access key
+        secretAccessKey: YOUR-KEY-SECRET
+        # Amazon S3 region
+        region: YOUR-REGION
+        # Amazon S3 bucket that you have write access to
+        bucket: YOUR-BUCKET-ID
