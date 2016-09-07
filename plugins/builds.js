@@ -20,7 +20,7 @@ const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 exports.register = (server, options, next) => {
     const cache = server.cache({
         segment: 'builds',
-        expiresIn: options.expiresInSec || DEFAULT_TTL
+        expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
     });
 
     server.expose('stats', cache.stats);
@@ -67,7 +67,7 @@ exports.register = (server, options, next) => {
             notes: 'Write an artifact from a specific build',
             tags: ['api', 'builds'],
             payload: {
-                maxBytes: options.maxByteSize || DEFAULT_BYTES,
+                maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
                 parse: false
             },
             auth: {
