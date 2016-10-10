@@ -13,9 +13,6 @@ describe('server case', () => {
         });
     });
 
-    beforeEach(() => {
-    });
-
     afterEach(() => {
         mockery.deregisterAll();
         mockery.resetCache();
@@ -27,31 +24,47 @@ describe('server case', () => {
     });
 
     describe('positive cases', () => {
-        let error;
         let server;
 
-        before((done) => {
-            /* eslint-disable global-require */
-            hapiEngine = require('../../lib/server');
-            /* eslint-enable global-require */
+        before(() => {
+            console.log('Top of before.');
 
-            hapiEngine({
-                httpd: {
-                    port: 12347
-                },
-                cache: { engine },
-                auth: {
-                    jwtPublicKey: '12345'
-                }
-            }, (e, s) => {
-                error = e;
-                server = s;
-                done();
+            return new Promise((resolve, reject) => {
+                /* eslint-disable global-require */
+                hapiEngine = require('../../lib/server');
+                /* eslint-enable global-require */
+
+                console.log('Setting up...');
+
+                return hapiEngine({
+                    httpd: {
+                        port: 12347
+                    },
+                    cache: { engine },
+                    auth: {
+                        jwtPublicKey: '12345'
+                    }
+                }, (e, s) => {
+                    console.log('... resolving...');
+
+                    if (e) {
+                        console.log('... rejecting!');
+                        console.log(e);
+
+                        return reject(e);
+                    }
+
+                    console.log('saving server data');
+                    server = s;
+
+                    console.log('... returning');
+
+                    return resolve(server);
+                });
             });
         });
 
         it('does it with a different port', (done) => {
-            Assert.notOk(error);
             server.inject({
                 method: 'GET',
                 url: '/blah'
