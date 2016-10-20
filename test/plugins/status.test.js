@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const hapi = require('hapi');
@@ -50,7 +51,7 @@ describe('status plugin test', () => {
         it('returns 200 with OK', () => (
             server.inject({
                 url: '/status'
-            }).then(reply => {
+            }).then((reply) => {
                 assert.equal(reply.statusCode, 200);
                 assert.deepEqual(reply.result, 'OK');
             })

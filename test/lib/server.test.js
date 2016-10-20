@@ -1,4 +1,5 @@
 'use strict';
+
 const Assert = require('chai').assert;
 const mockery = require('mockery');
 const engine = require('catbox-memory');
