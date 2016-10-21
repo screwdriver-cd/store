@@ -1,4 +1,5 @@
 'use strict';
+
 const Assert = require('chai').assert;
 const mockery = require('mockery');
 const engine = require('catbox-memory');
@@ -13,9 +14,6 @@ describe('server case', () => {
         });
     });
 
-    beforeEach(() => {
-    });
-
     afterEach(() => {
         mockery.deregisterAll();
         mockery.resetCache();
@@ -27,10 +25,9 @@ describe('server case', () => {
     });
 
     describe('positive cases', () => {
-        let error;
         let server;
 
-        before((done) => {
+        beforeEach((done) => {
             /* eslint-disable global-require */
             hapiEngine = require('../../lib/server');
             /* eslint-enable global-require */
@@ -44,39 +41,36 @@ describe('server case', () => {
                     jwtPublicKey: '12345'
                 }
             }, (e, s) => {
-                error = e;
                 server = s;
-                done();
+
+                done(e);
             });
         });
 
-        it('does it with a different port', (done) => {
-            Assert.notOk(error);
+        it('does it with a different port', () =>
             server.inject({
                 method: 'GET',
                 url: '/blah'
-            }, (response) => {
+            }).then((response) => {
                 Assert.equal(response.statusCode, 404);
                 Assert.include(response.request.info.host, '12347');
-                done();
-            });
-        });
+            })
+        );
     });
 
     describe('negative cases', () => {
-        it('fails during registration', (done) => {
+        it('fails during registration', () => {
             /* eslint-disable global-require */
             hapiEngine = require('../../lib/server');
             /* eslint-enable global-require */
 
-            hapiEngine({
+            return hapiEngine({
                 httpd: {
                     port: 12347
                 },
                 cache: { engine }
             }, (error) => {
                 Assert.isOk(error);
-                done();
             });
         });
     });

@@ -1,4 +1,5 @@
 'use strict';
+
 const assert = require('chai').assert;
 const sinon = require('sinon');
 const hapi = require('hapi');
@@ -71,7 +72,7 @@ describe('builds plugin test', () => {
         it('returns 404 if not found', () => (
             server.inject({
                 url: `/builds/${mockBuildID}/foo`
-            }).then(reply => {
+            }).then((reply) => {
                 assert.equal(reply.statusCode, 404);
             })
         ));
@@ -109,7 +110,7 @@ describe('builds plugin test', () => {
             it('returns 500 if caching fails', () => (
                 badServer.inject({
                     url: `/builds/${mockBuildID}/foo`
-                }).then(reply => {
+                }).then((reply) => {
                     assert.equal(reply.statusCode, 500);
                 })
             ));
@@ -138,7 +139,7 @@ describe('builds plugin test', () => {
         it('returns 403 if wrong creds', () => {
             options.url = '/builds/8843d7f92416211de9ebb963ff4ce28125932878/foo';
 
-            return server.inject(options).then(reply => {
+            return server.inject(options).then((reply) => {
                 assert.equal(reply.statusCode, 403);
             });
         });
@@ -147,7 +148,7 @@ describe('builds plugin test', () => {
             options.url = `/builds/${mockBuildID}/foo`;
             options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then(reply => {
+            return server.inject(options).then((reply) => {
                 assert.equal(reply.statusCode, 503);
             });
         });
@@ -155,12 +156,12 @@ describe('builds plugin test', () => {
         it('saves an artifact', () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
-            return server.inject(options).then(reply => {
+            return server.inject(options).then((reply) => {
                 assert.equal(reply.statusCode, 202);
 
                 return server.inject({
                     url: `/builds/${mockBuildID}/foo`
-                }).then(reply2 => {
+                }).then((reply2) => {
                     assert.equal(reply2.statusCode, 200);
                     assert.equal(reply2.headers['x-foo'], 'bar');
                     assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
