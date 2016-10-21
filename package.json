@@ -4,8 +4,8 @@
   "description": "Pluggable Artifact Store (for logs, shared steps, templates, etc).",
   "main": "index.js",
   "scripts": {
-    "pretest": "eslint . && snyk test",
-    "test": "jenkins-mocha --recursive",
+    "pretest": "eslint .",
+    "test": "jenkins-mocha --recursive --timeout 3000",
     "start": "./bin/server"
   },
   "repository": {
@@ -43,10 +43,10 @@
     "eslint-config-screwdriver": "^2.0.0",
     "eslint-plugin-import": "^2.0.0",
     "jenkins-mocha": "^3.0.4",
+    "js-yaml": "^3.6.1",
     "mockery": "^2.0.0",
     "sinon": "^1.17.5",
-    "sinon-as-promised": "^4.0.2",
-    "snyk": "^1.19.1"
+    "sinon-as-promised": "^4.0.2"
   },
   "dependencies": {
     "async": "^2.0.1",
