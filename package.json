@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "pretest": "eslint .",
-    "test": "jenkins-mocha --recursive",
+    "test": "jenkins-mocha --recursive --timeout 15000",
     "start": "./bin/server"
   },
   "repository": {

@@ -47,32 +47,30 @@ describe('server case', () => {
             });
         });
 
-        it('does it with a different port', (done) => {
+        it('does it with a different port', () =>
             server.inject({
                 method: 'GET',
                 url: '/blah'
-            }, (response) => {
+            }).then((response) => {
                 Assert.equal(response.statusCode, 404);
                 Assert.include(response.request.info.host, '12347');
-                done();
-            });
-        });
+            })
+        );
     });
 
     describe('negative cases', () => {
-        it('fails during registration', (done) => {
+        it('fails during registration', () => {
             /* eslint-disable global-require */
             hapiEngine = require('../../lib/server');
             /* eslint-enable global-require */
 
-            hapiEngine({
+            return hapiEngine({
                 httpd: {
                     port: 12347
                 },
                 cache: { engine }
             }, (error) => {
                 Assert.isOk(error);
-                done();
             });
         });
     });
