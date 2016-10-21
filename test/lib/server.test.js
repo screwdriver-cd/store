@@ -14,9 +14,6 @@ describe('server case', () => {
         });
     });
 
-    beforeEach(() => {
-    });
-
     afterEach(() => {
         mockery.deregisterAll();
         mockery.resetCache();
@@ -28,10 +25,9 @@ describe('server case', () => {
     });
 
     describe('positive cases', () => {
-        let error;
         let server;
 
-        before((done) => {
+        beforeEach((done) => {
             /* eslint-disable global-require */
             hapiEngine = require('../../lib/server');
             /* eslint-enable global-require */
@@ -45,14 +41,13 @@ describe('server case', () => {
                     jwtPublicKey: '12345'
                 }
             }, (e, s) => {
-                error = e;
                 server = s;
-                done();
+
+                done(e);
             });
         });
 
         it('does it with a different port', (done) => {
-            Assert.notOk(error);
             server.inject({
                 method: 'GET',
                 url: '/blah'
