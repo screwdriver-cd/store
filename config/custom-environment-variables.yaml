@@ -36,3 +36,5 @@ strategy:
         region: S3_REGION
         # Amazon S3 bucket that you have write access to
         bucket: S3_BUCKET
+        # Custom endpoint for Amazon S3 compatible storage
+        endpoint: S3_ENDPOINT
