@@ -12,9 +12,11 @@ httpd:
     host: HOST
     # Externally routable URI (usually your load balancer or CNAME)
     uri: URI
+    # TLS configuration (key, cert, etc.)
+    # https://nodejs.org/api/tls.html#tls_tls_createserver_options_secureconnectionlistener
     tls:
-        key: HTTPS_PRIVATE_KEY
-        cert: HTTPS_PRIVATE_CERT
+        __name: HTTPD_TLS
+        __format: json
 
 builds:
     # How long should builds stay around for
