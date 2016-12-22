@@ -12,10 +12,14 @@ jobs:
 
     publish:
         steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
             - install: npm install semantic-release
             - publish: npm run semantic-release
+            - docker: ./ci/docker.sh
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
             # Pushing tags to Git
             - GH_TOKEN
+            # Trigger a Docker Hub build
+            - DOCKER_TRIGGER
