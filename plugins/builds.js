@@ -3,7 +3,7 @@
 const joi = require('joi');
 const boom = require('boom');
 
-const SCHEMA_BUILD_ID = joi.string().hex().length(40).label('Build ID');
+const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB

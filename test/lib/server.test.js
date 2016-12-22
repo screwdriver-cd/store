@@ -4,7 +4,10 @@ const Assert = require('chai').assert;
 const mockery = require('mockery');
 const engine = require('catbox-memory');
 
-describe('server case', () => {
+describe('server case', function () {
+    // Time not important. Only life important.
+    this.timeout(5000);
+
     let hapiEngine;
 
     before(() => {
