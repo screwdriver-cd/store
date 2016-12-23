@@ -9,7 +9,7 @@ const catmemory = require('catbox-memory');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('builds plugin test', () => {
-    const mockBuildID = '80754af91bfb6d1073585b046fe0a474ce868509';
+    const mockBuildID = 1899999;
     let plugin;
     let server;
 
@@ -137,7 +137,7 @@ describe('builds plugin test', () => {
         });
 
         it('returns 403 if wrong creds', () => {
-            options.url = '/builds/8843d7f92416211de9ebb963ff4ce28125932878/foo';
+            options.url = '/builds/122222/foo';
 
             return server.inject(options).then((reply) => {
                 assert.equal(reply.statusCode, 403);
@@ -146,6 +146,8 @@ describe('builds plugin test', () => {
 
         it('returns 5xx if cache is bad', () => {
             options.url = `/builds/${mockBuildID}/foo`;
+            // @note this pushes the payload size over the 512 byte limit
+            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
             options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
             return server.inject(options).then((reply) => {
