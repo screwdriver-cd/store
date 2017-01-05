@@ -1,6 +1,7 @@
 workflow:
     - publish
     - beta
+    - prod
 
 shared:
     image: node:6
@@ -41,6 +42,25 @@ jobs:
             K8S_HOST: api.k8s.screwdriver.cd
             K8S_DEPLOYMENT: sdstore-beta
             SD_STORE: beta.store.screwdriver.cd
+        secrets:
+            # Talking to Kubernetes
+            - K8S_TOKEN
+
+    # Deploy to our prod environment and run tests
+    prod:
+        steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - get-tag: ./ci/git-latest.sh
+            - wait-docker: DOCKER_TAG=`cat VERSION` ./ci/docker-wait.sh
+            - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
+            - test: echo Put acceptance tests here
+        environment:
+            DOCKER_REPO: screwdrivercd/store
+            K8S_CONTAINER: screwdriver-store
+            K8S_IMAGE: screwdrivercd/store
+            K8S_HOST: api.k8s.screwdriver.cd
+            K8S_DEPLOYMENT: sdstore
+            SD_STORE: store.screwdriver.cd
         secrets:
             # Talking to Kubernetes
             - K8S_TOKEN
