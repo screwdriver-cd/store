@@ -1,5 +1,6 @@
 workflow:
     - publish
+    - beta
 
 shared:
     image: node:6
@@ -10,6 +11,7 @@ jobs:
             - install: npm install
             - test: npm test
 
+    # Publish the package to GitHub and build docker image
     publish:
         steps:
             - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
@@ -23,3 +25,22 @@ jobs:
             - GH_TOKEN
             # Trigger a Docker Hub build
             - DOCKER_TRIGGER
+
+    # Deploy to our beta environment and run tests
+    beta:
+        steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - get-tag: ./ci/git-latest.sh
+            - wait-docker: DOCKER_TAG=`cat VERSION` ./ci/docker-wait.sh
+            - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
+            - test: echo Put acceptance tests here
+        environment:
+            DOCKER_REPO: screwdrivercd/store
+            K8S_CONTAINER: screwdriver-store
+            K8S_IMAGE: screwdrivercd/store
+            K8S_HOST: api.k8s.screwdriver.cd
+            K8S_DEPLOYMENT: sdstore-beta
+            SD_STORE: beta.store.screwdriver.cd
+        secrets:
+            # Talking to Kubernetes
+            - K8S_TOKEN
