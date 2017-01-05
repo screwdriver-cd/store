@@ -82,7 +82,7 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [license-image]: https://img.shields.io/npm/l/screwdriver-store.svg
 [issues-image]: https://img.shields.io/github/issues/screwdriver-cd/store.svg
 [issues-url]: https://github.com/screwdriver-cd/store/issues
-[status-image]: https://cd.screwdriver.cd/pipelines/22cba9a81c7643dabd4cd0dc58146d34723baa0d/badge
-[status-url]: https://cd.screwdriver.cd/pipelines/22cba9a81c7643dabd4cd0dc58146d34723baa0d
+[status-image]: https://cd.screwdriver.cd/pipelines/24/badge
+[status-url]: https://cd.screwdriver.cd/pipelines/24
 [daviddm-image]: https://david-dm.org/screwdriver-cd/store.svg?theme=shields.io
 [daviddm-url]: https://david-dm.org/screwdriver-cd/store
