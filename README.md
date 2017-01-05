@@ -80,8 +80,8 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [docker-stars]: https://img.shields.io/docker/stars/screwdrivercd/store.svg
 [docker-url]: https://hub.docker.com/r/screwdrivercd/store/
 [license-image]: https://img.shields.io/npm/l/screwdriver-store.svg
-[issues-image]: https://img.shields.io/github/issues/screwdriver-cd/store.svg
-[issues-url]: https://github.com/screwdriver-cd/store/issues
+[issues-image]: https://img.shields.io/github/issues/screwdriver-cd/screwdriver.svg
+[issues-url]: https://github.com/screwdriver-cd/screwdriver/issues
 [status-image]: https://cd.screwdriver.cd/pipelines/24/badge
 [status-url]: https://cd.screwdriver.cd/pipelines/24
 [daviddm-image]: https://david-dm.org/screwdriver-cd/store.svg?theme=shields.io
