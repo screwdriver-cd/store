@@ -19,6 +19,8 @@ jobs:
             - install: npm install semantic-release
             - publish: npm run semantic-release
             - docker: ./ci/docker.sh
+        environment:
+            DOCKER_REPO: screwdrivercd/store
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
