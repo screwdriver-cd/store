@@ -50,3 +50,6 @@ strategy:
         region: YOUR-REGION
         # Amazon S3 bucket that you have write access to
         bucket: YOUR-BUCKET-ID
+
+ecosystem:
+    ui: https://cd.screwdriver.cd
