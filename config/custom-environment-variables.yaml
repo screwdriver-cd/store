@@ -40,3 +40,6 @@ strategy:
         bucket: S3_BUCKET
         # Custom endpoint for Amazon S3 compatible storage
         endpoint: S3_ENDPOINT
+
+ecosystem:
+    ui: ECOSYSTEM_UI

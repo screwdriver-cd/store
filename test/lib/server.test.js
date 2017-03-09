@@ -7,6 +7,10 @@ describe('server case', function () {
     // Time not important. Only life important.
     this.timeout(5000);
 
+    const ecosystem = {
+        ui: 'http://example.com'
+    };
+
     let hapiEngine;
 
     beforeEach(() => {
@@ -28,7 +32,8 @@ describe('server case', function () {
                 cache: { engine },
                 auth: {
                     jwtPublicKey: '12345'
-                }
+                },
+                ecosystem
             }, (e, s) => {
                 const server = s;
 
@@ -38,9 +43,13 @@ describe('server case', function () {
 
                 return server.inject({
                     method: 'GET',
-                    url: '/blah'
+                    url: '/v1/status',
+                    headers: {
+                        origin: ecosystem.ui
+                    }
                 }, (response) => {
-                    Assert.equal(response.statusCode, 404);
+                    Assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
+                    Assert.equal(response.statusCode, 200);
                     Assert.include(response.request.info.host, '12347');
                     done();
                 });
@@ -54,7 +63,8 @@ describe('server case', function () {
                 httpd: {
                     port: 12347
                 },
-                cache: { engine }
+                cache: { engine },
+                ecosystem
             }, (error) => {
                 Assert.isOk(error);
                 done();
