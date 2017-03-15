@@ -23,7 +23,7 @@ $ npm start
 info: Server running at http://localhost
 ```
 
-### Prebuilt Docker image
+### Pre-built Docker image
 
 ```bash
 $ vim ./local.yaml # See below for configuration
