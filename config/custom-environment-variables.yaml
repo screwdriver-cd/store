@@ -40,6 +40,8 @@ strategy:
         bucket: S3_BUCKET
         # Custom endpoint for Amazon S3 compatible storage
         endpoint: S3_ENDPOINT
+        # Specific signature version for KMS encrypted objects
+        signatureVersion: S3_SIG_VER
 
 ecosystem:
     ui: ECOSYSTEM_UI
