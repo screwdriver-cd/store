@@ -14,11 +14,11 @@ jobs:
 
     # Publish the package to GitHub and build docker image
     publish:
+        template: screwdriver-cd/semantic-release
         steps:
-            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
-            - install: npm install semantic-release
-            - publish: npm run semantic-release
-            - docker: ./ci/docker.sh
+          - postpublish: |
+                git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+                ./ci/docker.sh
         environment:
             # Docker hub repo
             DOCKER_REPO: screwdrivercd/store
