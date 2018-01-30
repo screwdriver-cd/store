@@ -33,7 +33,7 @@ exports.register = (server, options, next) => {
             tags: ['api', 'builds'],
             auth: {
                 strategies: ['token'],
-                scope: ['read:build']
+                scope: ['user']
             },
             plugins: {
                 'hapi-swagger': {

@@ -76,7 +76,7 @@ describe('builds plugin test', () => {
                 },
                 credentials: {
                     username: mockBuildID,
-                    scope: ['read:build']
+                    scope: ['user']
                 },
                 url: `/builds/${mockBuildID}/foo`
             }).then((reply) => {
@@ -121,7 +121,7 @@ describe('builds plugin test', () => {
                     },
                     credentials: {
                         username: mockBuildID,
-                        scope: ['read:build']
+                        scope: ['user']
                     },
                     url: `/builds/${mockBuildID}/foo`
                 }).then((reply) => {
@@ -182,7 +182,7 @@ describe('builds plugin test', () => {
                     },
                     credentials: {
                         username: mockBuildID,
-                        scope: ['read:build']
+                        scope: ['user']
                     }
                 }).then((reply2) => {
                     assert.equal(reply2.statusCode, 200);
