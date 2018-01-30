@@ -71,6 +71,13 @@ describe('builds plugin test', () => {
     describe('GET /builds/:id/:artifact', () => {
         it('returns 404 if not found', () => (
             server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['read:build']
+                },
                 url: `/builds/${mockBuildID}/foo`
             }).then((reply) => {
                 assert.equal(reply.statusCode, 404);
@@ -109,6 +116,13 @@ describe('builds plugin test', () => {
 
             it('returns 500 if caching fails', () => (
                 badServer.inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['read:build']
+                    },
                     url: `/builds/${mockBuildID}/foo`
                 }).then((reply) => {
                     assert.equal(reply.statusCode, 500);
@@ -162,7 +176,14 @@ describe('builds plugin test', () => {
                 assert.equal(reply.statusCode, 202);
 
                 return server.inject({
-                    url: `/builds/${mockBuildID}/foo`
+                    url: `/builds/${mockBuildID}/foo`,
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['read:build']
+                    }
                 }).then((reply2) => {
                     assert.equal(reply2.statusCode, 200);
                     assert.equal(reply2.headers['x-foo'], 'bar');

@@ -31,6 +31,15 @@ exports.register = (server, options, next) => {
             description: 'Read build artifacts',
             notes: 'Get an artifact from a specific build',
             tags: ['api', 'builds'],
+            auth: {
+                strategies: ['token'],
+                scope: ['read:build']
+            },
+            plugins: {
+                'hapi-swagger': {
+                    security: [{ token: [] }]
+                }
+            },
             handler: (request, reply) => {
                 const buildId = request.params.id;
                 const artifact = request.params.artifact;
