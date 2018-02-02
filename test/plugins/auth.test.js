@@ -49,6 +49,6 @@ describe('auth plugin test', () => {
     });
 
     it('registers the plugin', () => {
-        assert.isOk(server.registrations['hapi-auth-jwt']);
+        assert.isOk(server.registrations['hapi-auth-jwt2']);
     });
 });

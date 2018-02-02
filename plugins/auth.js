@@ -1,6 +1,6 @@
 'use strict';
 
-const jwt = require('hapi-auth-jwt');
+const jwt = require('hapi-auth-jwt2');
 const joi = require('joi');
 
 /**
@@ -28,6 +28,11 @@ exports.register = (server, options, next) => {
             verifyOptions: {
                 algorithms: ['RS256'],
                 maxAge: '12h'
+            },
+            // This function is run once the Token has been decoded with signature
+            validateFunc(decoded, request, cb) {
+                // TODO: figure out what to do here
+                cb(null, true);
             }
         });
 
