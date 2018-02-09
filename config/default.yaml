@@ -34,6 +34,12 @@ builds:
     # Upper limit on incoming uploads to builds
     maxByteSize: 1073741824 # 1GB
 
+commands:
+    # How long should commands stay around for
+    expiresInSec: 1814400000 # 3 weeks
+    # Upper limit on incoming uploads to commands
+    maxByteSize: 1073741824 # 1GB
+
 strategy:
     plugin: memory
     memory:
@@ -55,3 +61,4 @@ strategy:
 
 ecosystem:
     ui: https://cd.screwdriver.cd
+    api: https://api.screwdriver.cd

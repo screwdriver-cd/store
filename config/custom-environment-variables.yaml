@@ -24,6 +24,12 @@ builds:
     # Upper limit on incoming uploads to builds
     maxByteSize: BUILDS_MAX_BYTES
 
+commands:
+    # How long should commands stay around for
+    expiresInSec: COMMANDS_EXPIRE_TIME
+    # Upper limit on incoming uploads to commands
+    maxByteSize: COMMANDS_MAX_BYTES
+
 strategy:
     plugin: STRATEGY
     memory:
@@ -47,3 +53,4 @@ strategy:
 
 ecosystem:
     ui: ECOSYSTEM_UI
+    api: ECOSYSTEM_API

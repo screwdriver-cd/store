@@ -8,7 +8,8 @@ describe('server case', function () {
     this.timeout(5000);
 
     const ecosystem = {
-        ui: 'http://example.com'
+        ui: 'http://example.com',
+        api: 'http://api.example.com'
     };
 
     let hapiEngine;
@@ -33,6 +34,7 @@ describe('server case', function () {
                 auth: {
                     jwtPublicKey: '12345'
                 },
+                commands: {},
                 ecosystem
             }, (e, s) => {
                 const server = s;
@@ -64,6 +66,7 @@ describe('server case', function () {
                     port: 12347
                 },
                 cache: { engine },
+                commands: {},
                 ecosystem
             }, (error) => {
                 Assert.isOk(error);
