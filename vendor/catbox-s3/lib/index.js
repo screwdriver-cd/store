@@ -113,6 +113,10 @@ internals.Connection.prototype.start = function (callback) {
         clientOptions.signatureVersion = this.settings.signatureVersion;
     }
 
+    if (this.settings.forcePathStyle) {
+        clientOptions.s3ForcePathStyle = this.settings.forcePathStyle;
+    }
+
     this.client = new AWS.S3(clientOptions);
 
     internals.testBucketAccess(this.client, this.settings, (err, data) => {

@@ -42,6 +42,8 @@ strategy:
         endpoint: S3_ENDPOINT
         # Specific signature version for KMS encrypted objects
         signatureVersion: S3_SIG_VER
+        # Whether to force path style URLs for S3 objects.
+        forcePathStyle: S3_FORCE_PATH_STYLE
 
 ecosystem:
     ui: ECOSYSTEM_UI

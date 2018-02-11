@@ -50,6 +50,8 @@ strategy:
         region: YOUR-REGION
         # Amazon S3 bucket that you have write access to
         bucket: YOUR-BUCKET-ID
+        # Whether to force path style URLs for S3 objects.
+        forcePathStyle: false
 
 ecosystem:
     ui: https://cd.screwdriver.cd
