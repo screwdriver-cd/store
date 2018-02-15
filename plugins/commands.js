@@ -10,7 +10,7 @@ const DEFAULT_TTL = 21 * 24 * 60 * 60 * 1000; // 3 weeks
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
 /**
- * Determin if a pipeline can publish the command
+ * Determine if a pipeline can publish the command
  * @method canPublishCommand
  * @param  {String}  namespace  Command namespace
  * @param  {String}  name       Command name
