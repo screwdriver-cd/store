@@ -37,10 +37,8 @@ function canPublishCommand(namespace, name, pipelineId, baseurl) {
             element.namespace === namespace && element.name === name
         );
 
-        if (commands.length === 0) {
-            return Promise.resolve(true);
-        }
-        if (commands[0].pipelineId === pipelineId) {
+        // If commands.length === 0, it is first time to publish namespace/name command.
+        if (commands.length === 0 || commands[0].pipelineId === pipelineId) {
             return Promise.resolve(true);
         }
 
@@ -111,7 +109,7 @@ exports.register = (server, options, next) => {
         method: 'PUT',
         path: '/commands/{namespace}/{name}/{version}',
         config: {
-            description: 'Write commands',
+            description: 'Write command',
             notes: 'Write a script or binary of specific command',
             tags: ['api', 'commands'],
             payload: {
