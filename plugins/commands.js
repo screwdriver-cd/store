@@ -6,7 +6,7 @@ const requestApi = require('request');
 const SCHEMA_COMMAND_NAMESPACE = joi.string().label('Command namespace');
 const SCHEMA_COMMAND_NAME = joi.string().label('Command name');
 const SCHEMA_COMMAND_VERSION = joi.string().label('Command version');
-const DEFAULT_TTL = 21 * 24 * 60 * 60 * 1000; // 3 weeks
+const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
 /**
