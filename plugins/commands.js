@@ -69,6 +69,10 @@ exports.register = (server, options, next) => {
             description: 'Get command binary',
             notes: 'Get a script or binary of specific command',
             tags: ['api', 'commands'],
+            auth: {
+                strategies: ['token'],
+                scope: ['user']
+            },
             plugins: {
                 'hapi-swagger': {
                     security: [{ token: [] }]

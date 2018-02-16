@@ -85,6 +85,9 @@ describe('commands plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
+                credentials: {
+                    scope: ['user']
+                },
                 url: `/commands/${mockCommandNamespace}/foo/0..0`
             }).then((reply) => {
                 assert.equal(reply.statusCode, 404);
@@ -125,6 +128,9 @@ describe('commands plugin test', () => {
                 badServer.inject({
                     headers: {
                         'x-foo': 'bar'
+                    },
+                    credentials: {
+                        scope: ['user']
                     },
                     url: `/commands/${mockCommandNamespace}/`
                         + `${mockCommandName}/${mockCommandVersion}`
@@ -199,7 +205,7 @@ describe('commands plugin test', () => {
                         'x-foo': 'bar'
                     },
                     credentials: {
-                        scope: ['build']
+                        scope: ['user']
                     }
                 }).then((reply2) => {
                     assert.equal(reply2.statusCode, 200);
