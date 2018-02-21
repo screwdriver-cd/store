@@ -141,12 +141,12 @@ describe('commands plugin test', () => {
         });
     });
 
-    describe('PUT /commands/:namespace/:name/:version', () => {
+    describe('POST /commands/:namespace/:name/:version', () => {
         let options;
 
         beforeEach(() => {
             options = {
-                method: 'PUT',
+                method: 'POST',
                 payload: 'THIS IS A TEST',
                 headers: {
                     'x-foo': 'bar',

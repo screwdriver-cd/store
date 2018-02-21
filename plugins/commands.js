@@ -110,7 +110,7 @@ exports.register = (server, options, next) => {
             }
         }
     }, {
-        method: 'PUT',
+        method: 'POST',
         path: '/commands/{namespace}/{name}/{version}',
         config: {
             description: 'Write command',
