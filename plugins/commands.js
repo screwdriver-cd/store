@@ -1,11 +1,11 @@
 'use strict';
 
-const joi = require('joi');
 const boom = require('boom');
 const requestApi = require('request');
-const SCHEMA_COMMAND_NAMESPACE = joi.string().label('Command namespace');
-const SCHEMA_COMMAND_NAME = joi.string().label('Command name');
-const SCHEMA_COMMAND_VERSION = joi.string().label('Command version');
+const schema = require('screwdriver-data-schema');
+const SCHEMA_COMMAND_NAMESPACE = schema.config.command.namespace;
+const SCHEMA_COMMAND_NAME = schema.config.command.name;
+const SCHEMA_COMMAND_VERSION = schema.config.command.version;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 

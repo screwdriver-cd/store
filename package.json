@@ -72,6 +72,7 @@
     "inert": "^4.0.2",
     "joi": "^13.0.0",
     "request": "^2.83.0",
+    "screwdriver-data-schema": "^18.11.5",
     "verror": "^1.8.1",
     "vision": "^4.1.0",
     "winston": "^2.2.0"

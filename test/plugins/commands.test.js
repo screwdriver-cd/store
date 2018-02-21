@@ -88,7 +88,7 @@ describe('commands plugin test', () => {
                 credentials: {
                     scope: ['user']
                 },
-                url: `/commands/${mockCommandNamespace}/foo/0..0`
+                url: `/commands/${mockCommandNamespace}/foo/0.0`
             }).then((reply) => {
                 assert.equal(reply.statusCode, 404);
             })
