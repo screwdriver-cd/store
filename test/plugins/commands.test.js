@@ -5,8 +5,6 @@ const sinon = require('sinon');
 const hapi = require('hapi');
 const mockery = require('mockery');
 const catmemory = require('catbox-memory');
-const nock = require('nock');
-const testcommands = require('./data/commands.json');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -14,7 +12,6 @@ describe('commands plugin test', () => {
     const mockCommandNamespace = 'foo';
     const mockCommandName = 'bar';
     const mockCommandVersion = '1.2.3';
-    const mockEcosystem = { api: 'http://api.example.com' };
     let plugin;
     let server;
 
@@ -26,10 +23,6 @@ describe('commands plugin test', () => {
     });
 
     beforeEach((done) => {
-        nock('http://api.example.com')
-            .get('/v4/commands')
-            .reply(200, testcommands);
-
         /* eslint-disable global-require */
         plugin = require('../../plugins/commands');
         /* eslint-enable global-require */
@@ -41,9 +34,6 @@ describe('commands plugin test', () => {
                 allowMixedContent: true
             }
         });
-        server.app = {
-            ecosystem: mockEcosystem
-        };
         server.connection({
             port: 1234
         });
@@ -178,16 +168,6 @@ describe('commands plugin test', () => {
 
             return server.inject(options).then((reply) => {
                 assert.equal(reply.statusCode, 503);
-            });
-        });
-
-        it('returns 401 when pipeline is not allowed', () => {
-            options.url = `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`;
-            options.credentials.pipelineId = 456;
-
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 401);
             });
         });
 
