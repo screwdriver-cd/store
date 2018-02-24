@@ -41,9 +41,7 @@ exports.register = (server, options, next) => {
                 }
             },
             handler: (request, reply) => {
-                const namespace = request.params.namespace;
-                const name = request.params.name;
-                const version = request.params.version;
+                const { namespace, name, version } = request.params
 
                 const id = `${namespace}-${name}-${version}`;
 
@@ -93,9 +91,7 @@ exports.register = (server, options, next) => {
             },
             handler: (request, reply) => {
                 const pipelineId = request.auth.credentials.pipelineId;
-                const namespace = request.params.namespace;
-                const name = request.params.name;
-                const version = request.params.version;
+                const { namespace, name, version } = request.params
                 const id = `${namespace}-${name}-${version}`;
                 const contents = {
                     c: request.payload,
