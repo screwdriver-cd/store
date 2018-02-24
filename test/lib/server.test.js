@@ -8,8 +8,7 @@ describe('server case', function () {
     this.timeout(5000);
 
     const ecosystem = {
-        ui: 'http://example.com',
-        api: 'http://api.example.com'
+        ui: 'http://example.com'
     };
 
     let hapiEngine;
