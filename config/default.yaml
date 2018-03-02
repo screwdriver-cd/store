@@ -34,6 +34,12 @@ builds:
     # Upper limit on incoming uploads to builds
     maxByteSize: 1073741824 # 1GB
 
+commands:
+    # How long should commands stay around for
+    expiresInSec: 31536000000 # 1 year
+    # Upper limit on incoming uploads to commands
+    maxByteSize: 1073741824 # 1GB
+
 strategy:
     plugin: memory
     memory:
