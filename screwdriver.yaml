@@ -1,24 +1,24 @@
-workflow:
-    - publish
-    - beta
-    - prod
-
 shared:
     image: node:6
 
 jobs:
     main:
+        requires: [~pr, ~commit]
         steps:
             - install: npm install
             - test: npm test
 
-    # Publish the package to GitHub and build docker image
+    # Publish the package to GitHub and build Docker image
     publish:
+        requires: [main]
         template: screwdriver-cd/semantic-release
         steps:
           - postpublish: |
-                git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
-                ./ci/docker.sh
+                git clone https://github.com/screwdriver-cd/toolbox.git ci
+                ./ci/git-tag.sh
+                ./ci/git-release.sh
+                export DOCKER_TAG=`cat VERSION`
+                ./ci/docker-trigger.sh
         environment:
             # Docker hub repo
             DOCKER_REPO: screwdrivercd/store
@@ -30,14 +30,15 @@ jobs:
             # Trigger a Docker Hub build
             - DOCKER_TRIGGER
 
-    # Deploy to our beta environment and run tests
+    # Deploy to beta environment and run tests
     beta:
+        requires: [publish]
         steps:
-            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - setup-ci: git clone https://github.com/screwdriver-cd/toolbox.git ci
             - get-tag: ./ci/git-latest.sh
             - wait-docker: DOCKER_TAG=`cat VERSION` ./ci/docker-wait.sh
             - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
-            - test: echo Put acceptance tests here
+            - test: curl --silent --fail -o /dev/null https://beta.store.screwdriver.cd
         environment:
             DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
@@ -49,14 +50,15 @@ jobs:
             # Talking to Kubernetes
             - K8S_TOKEN
 
-    # Deploy to our prod environment and run tests
+    # Deploy to prod environment and run tests
     prod:
+        requires: [beta]
         steps:
-            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - setup-ci: git clone https://github.com/screwdriver-cd/toolbox.git ci
             - get-tag: ./ci/git-latest.sh
             - wait-docker: DOCKER_TAG=`cat VERSION` ./ci/docker-wait.sh
             - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
-            - test: echo Put acceptance tests here
+            - test: curl --silent --fail -o /dev/null https://store.screwdriver.cd
         environment:
             DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
