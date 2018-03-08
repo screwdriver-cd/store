@@ -9,10 +9,6 @@ const config = require('config');
 const strategyConfig = config.get('strategy');
 let strategyModule = `catbox-${strategyConfig.plugin}`;
 
-// Use the vendor package until resolution of PR https://github.com/fhemberger/catbox-s3/pull/55
-if (strategyConfig.plugin === 's3') {
-    strategyModule = `../vendor/${strategyModule}`;
-}
 // eslint-disable-next-line import/no-dynamic-require
 const strategy = require(strategyModule);
 const cache = Object.assign({ engine: strategy }, strategyConfig[strategyConfig.plugin]);
