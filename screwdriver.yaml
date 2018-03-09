@@ -15,8 +15,6 @@ jobs:
         steps:
           - postpublish: |
                 git clone https://github.com/screwdriver-cd/toolbox.git ci
-                ./ci/git-tag.sh
-                ./ci/git-release.sh
                 export DOCKER_TAG=`cat VERSION`
                 ./ci/docker-trigger.sh
         environment:
