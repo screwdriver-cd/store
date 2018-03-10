@@ -60,7 +60,7 @@ All the possible environment variables are [defined here](config/custom-environm
 
 ## Storage Strategies
 
-Right now we're using [catbox](https://github.com/hapijs/catbox) for storage, so we can support any of their plugins (Redis, S3, Memcached, etc.).  We have only installed the [memory](https://github.com/hapijs/catbox-memory) and [S3](https://github.com/fhemberger/catbox-s3) ones right now.
+Right now we're using [catbox](https://github.com/hapijs/catbox) for storage, so we can support any of their plugins (Redis, S3, Memcached, etc.).  We only installed the [memory](https://github.com/hapijs/catbox-memory) and [S3](https://github.com/fhemberger/catbox-s3) ones for now.
 
 ## Testing
 
