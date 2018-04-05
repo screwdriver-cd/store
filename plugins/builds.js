@@ -37,7 +37,7 @@ exports.plugin = {
                 let value;
 
                 try {
-                    value = cache.get(id);
+                    value = await cache.get(id);
                 } catch (err) {
                     return err;
                 }
