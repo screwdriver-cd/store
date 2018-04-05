@@ -19,7 +19,7 @@ exports.plugin = {
      * @param  {Integer}  options.expiresInSec  How long to keep it around
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
-    register: async function (server, options) {
+    async register(server, options) {
         const cache = server.cache({
             segment: 'commands',
             expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
@@ -30,7 +30,7 @@ exports.plugin = {
         server.route([{
             method: 'GET',
             path: '/commands/{namespace}/{name}/{version}',
-            handler: async function (request, h) {
+            async handler(request, h) {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
 
@@ -45,7 +45,6 @@ exports.plugin = {
                 if (!value) {
                     return boom.notFound();
                 }
-
 
                 const response = h.response(Buffer.from(value.c.data));
 
@@ -77,7 +76,7 @@ exports.plugin = {
         }, {
             method: 'POST',
             path: '/commands/{namespace}/{name}/{version}',
-            handler: async function (request, h) {
+            async handler(request, h) {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;

@@ -3,7 +3,14 @@
 const jwt = require('hapi-auth-jwt2');
 const joi = require('joi');
 
-async function validate (decoded, request) {
+/**
+ * Validate JWT
+ * @async  validate
+ * @param  {Object}   decoded       Decoded JWT object
+ * @param  {Hapi}     request       Hapi Request
+ * @return {Object}   Object with isValid property, denoting JWT validity
+ */
+async function validate(decoded, request) {     // eslint-disable-line
     // TODO: figure our what to do here
     return { isValid: true };
 }
@@ -18,7 +25,7 @@ exports.plugin = {
      * @param  {Object}   options               Configuration object
      * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
      */
-    register: async function (server, options) {
+    async register(server, options) {
         let pluginOptions;
 
         try {

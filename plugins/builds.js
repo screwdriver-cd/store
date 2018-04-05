@@ -19,7 +19,7 @@ exports.plugin = {
      * @param  {Integer}  options.expiresInSec  How long to keep it around
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
-    register: async function (server, options) {
+    async register(server, options) {
         const cache = server.cache({
             segment: 'builds',
             expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
@@ -30,7 +30,7 @@ exports.plugin = {
         server.route([{
             method: 'GET',
             path: '/builds/{id}/{artifact*}',
-            handler: async function (request, h) {
+            async handler(request, h) {
                 const { buildId, artifact } = request.params;
                 const id = `${buildId}-${artifact}`;
 
@@ -75,7 +75,7 @@ exports.plugin = {
         }, {
             method: 'PUT',
             path: '/builds/{id}/{artifact*}',
-            handler: async function (request, h) {
+            async handler(request, h) {
                 const { username } = request.auth.credentials;
                 const { artifact, buildId } = request.params;
                 const id = `${buildId}-${artifact}`;

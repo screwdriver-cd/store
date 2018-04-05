@@ -4,13 +4,11 @@ exports.plugin = {
     name: 'stats',
 
     /**
-     * Hapi interface for plugin to set up status endpoint (see Hapi docs)
-     * @method register
-     * @param  {Hapi.Server}    server
-     * @param  {Object}         options
-     * @param  {Function} next
+     * Hapi interface for plugin to set up status endpoint
+     * @async  register
+     * @param  {Object}      server      Hapi server instance
      */
-    register: async function (server, options) {
+    async register(server) {
         server.route({
             method: 'GET',
             path: '/stats',
@@ -19,7 +17,7 @@ exports.plugin = {
                 description: 'API stats',
                 notes: 'Should return statistics for the entire system',
                 tags: ['api', 'stats']
-            },
+            }
         });
     }
 };
