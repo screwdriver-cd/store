@@ -1,14 +1,14 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
-const hapi = require('hapi');
+const Hapi = require('hapi');
 const mockery = require('mockery');
 const catmemory = require('catbox-memory');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('builds plugin test', () => {
+describe.only('builds plugin test', () => {
     const mockBuildID = 1899999;
     let plugin;
     let server;
@@ -20,45 +20,45 @@ describe('builds plugin test', () => {
         });
     });
 
-    beforeEach((done) => {
-        /* eslint-disable global-require */
+    beforeEach(() => {
+        // eslint-disable-next-line global-require
         plugin = require('../../plugins/builds');
-        /* eslint-enable global-require */
 
-        server = new hapi.Server({
+        server = Hapi.server({
             cache: {
                 engine: catmemory,
                 maxByteSize: 512,
                 allowMixedContent: true
-            }
-        });
-        server.connection({
+            },
             port: 1234
         });
 
-        server.auth.scheme('custom', () => ({
-            authenticate: (request, reply) => reply.continue({})
-        }));
+        server.auth.scheme('custom', function () {
+            return {
+                authenticate(request, h) {
+                    console.log('helloooo, anyone home?');
+
+                    return h.authenticated();
+                }
+            };
+        });
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        server.register({
-            register: plugin
-        }, (err) => {
-            if (err) {
-                return done(err);
-            }
+        return server.register({ plugin })
+            .then(() => {
+                console.log('ready');
 
-            return server.start(done);
-        });
+                return server.start();
+            });
     });
 
-    afterEach(() => {
-        server.stop();
-        server = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
+    afterEach(() => server.stop()
+        .then(() => {
+            server = null;
+            mockery.deregisterAll();
+            mockery.resetCache();
+        }));
 
     after(() => {
         mockery.disable();
@@ -79,35 +79,31 @@ describe('builds plugin test', () => {
                     scope: ['user']
                 },
                 url: `/builds/${mockBuildID}/foo`
-            }).then((reply) => {
-                assert.equal(reply.statusCode, 404);
+            }).then((response) => {
+                assert.equal(response.statusCode, 404);
             })
         ));
 
         describe('caching is not setup right', () => {
             let badServer;
 
-            beforeEach((done) => {
-                badServer = new hapi.Server({
+            beforeEach(() => {
+                badServer = Hapi.server({
                     cache: {
                         engine: catmemory,
                         maxByteSize: 9999999999,
                         allowMixedContent: true
-                    }
-                });
-                badServer.connection({
+                    },
                     port: 12345
                 });
 
                 badServer.auth.scheme('custom', () => ({
-                    authenticate: (request, reply) => reply.continue({})
+                    authenticate: (request, h) => h.continue
                 }));
                 badServer.auth.strategy('token', 'custom');
                 badServer.auth.strategy('session', 'custom');
 
-                badServer.register({
-                    register: plugin
-                }, done);
+                return badServer.register({ plugin });
             });
 
             afterEach(() => {
@@ -124,8 +120,8 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     },
                     url: `/builds/${mockBuildID}/foo`
-                }).then((reply) => {
-                    assert.equal(reply.statusCode, 500);
+                }).then((response) => {
+                    assert.equal(response.statusCode, 500);
                 })
             ));
         });
@@ -153,19 +149,19 @@ describe('builds plugin test', () => {
         it('returns 403 if wrong creds', () => {
             options.url = '/builds/122222/foo';
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 403);
+            return server.inject(options).then((response) => {
+                assert.equal(response.statusCode, 403);
             });
         });
 
         it('returns 5xx if cache is bad', () => {
             options.url = `/builds/${mockBuildID}/foo`;
             // @note this pushes the payload size over the 512 byte limit
-            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
-            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 503);
+            return server.inject(options).then((response) => {
+                assert.equal(response.statusCode, 503);
             });
         });
 

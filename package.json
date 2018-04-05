@@ -51,14 +51,13 @@
     "jenkins-mocha": "^4.0.0",
     "js-yaml": "^3.6.1",
     "mockery": "^2.0.0",
-    "sinon": "^2.3.1",
-    "sinon-as-promised": "^4.0.2"
+    "sinon": "^4.5.0"
   },
   "dependencies": {
     "async": "^2.0.1",
     "boom": "^7.2.0",
-    "catbox": "^7.1.2",
-    "catbox-memory": "^2.0.3",
+    "catbox": "^10.0.2",
+    "catbox-memory": "^3.1.2",
     "catbox-s3": "^3.1.0",
     "config": "^1.21.0",
     "good": "^8.1.1",
