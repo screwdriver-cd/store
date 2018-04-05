@@ -64,7 +64,7 @@
     "good": "^8.1.1",
     "good-console": "^7.1.0",
     "good-squeeze": "^5.0.2",
-    "hapi": "^16.0.1",
+    "hapi": "^17.3.1",
     "hapi-auth-jwt2": "^8.1.0",
     "hapi-swagger": "^9.1.1",
     "hoek": "^5.0.3",
