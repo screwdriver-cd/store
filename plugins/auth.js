@@ -3,26 +3,38 @@
 const jwt = require('hapi-auth-jwt2');
 const joi = require('joi');
 
-/**
- * Auth Plugin
- * @method register
- * @param  {Hapi}     server                Hapi Server
- * @param  {Object}   options               Configuration object
- * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
- * @param  {Function} next                  Function to call when done
- */
-exports.register = (server, options, next) => {
-    let pluginOptions;
+async function validate (decoded, request) {
+    // TODO: figure our what to do here
+    return { isValid: true };
+}
 
-    try {
-        pluginOptions = joi.attempt(options, joi.object().keys({
-            jwtPublicKey: joi.string().required()
-        }), 'Invalid config for auth plugin');
-    } catch (ex) {
-        return next(ex);
-    }
+exports.plugin = {
+    name: 'auth',
 
-    return server.register(jwt).then(() => {
+    /**
+     * Auth Plugin
+     * @async  register
+     * @param  {Hapi}     server                Hapi Server
+     * @param  {Object}   options               Configuration object
+     * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
+     */
+    register: async function (server, options) {
+        let pluginOptions;
+
+        try {
+            pluginOptions = joi.attempt(options, joi.object().keys({
+                jwtPublicKey: joi.string().required()
+            }), 'Invalid config for auth plugin');
+        } catch (err) {
+            throw err;
+        }
+
+        try {
+            await server.register(jwt);
+        } catch (err) {
+            throw err;
+        }
+
         server.auth.strategy('token', 'jwt', {
             key: pluginOptions.jwtPublicKey,
             verifyOptions: {
@@ -30,16 +42,7 @@ exports.register = (server, options, next) => {
                 maxAge: '12h'
             },
             // This function is run once the Token has been decoded with signature
-            validateFunc(decoded, request, cb) {
-                // TODO: figure out what to do here
-                cb(null, true);
-            }
+            validate
         });
-
-        next();
-    });
-};
-
-exports.register.attributes = {
-    name: 'auth'
+    }
 };
