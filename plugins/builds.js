@@ -31,7 +31,8 @@ exports.plugin = {
             method: 'GET',
             path: '/builds/{id}/{artifact*}',
             async handler(request, h) {
-                const { buildId, artifact } = request.params;
+                const buildId = request.params.id;
+                const artifact = request.params.artifact;
                 const id = `${buildId}-${artifact}`;
 
                 let value;
@@ -77,7 +78,8 @@ exports.plugin = {
             path: '/builds/{id}/{artifact*}',
             async handler(request, h) {
                 const { username } = request.auth.credentials;
-                const { artifact, buildId } = request.params;
+                const buildId = request.params.id;
+                const artifact = request.params.artifact;
                 const id = `${buildId}-${artifact}`;
                 const size = Buffer.byteLength(request.payload);
                 const contents = {
@@ -107,7 +109,7 @@ exports.plugin = {
                     return boom.serverUnavailable(err.message, err);
                 }
 
-                return h.reponse().code(202);
+                return h.response().code(202);
             },
             options: {
                 description: 'Write build artifacts',

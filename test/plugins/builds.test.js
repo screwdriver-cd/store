@@ -8,7 +8,7 @@ const catmemory = require('catbox-memory');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('builds plugin test', () => {
+describe('builds plugin test', () => {
     const mockBuildID = 1899999;
     let plugin;
     let server;
@@ -33,32 +33,22 @@ describe.only('builds plugin test', () => {
             port: 1234
         });
 
-        server.auth.scheme('custom', function () {
-            return {
-                authenticate(request, h) {
-                    console.log('helloooo, anyone home?');
-
-                    return h.authenticated();
-                }
-            };
-        });
+        server.auth.scheme('custom', () => ({
+            authenticate: (request, h) => h.authenticated()
+        }));
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
         return server.register({ plugin })
-            .then(() => {
-                console.log('ready');
-
-                return server.start();
-            });
+            .then(() => server.start());
     });
 
-    afterEach(() => server.stop()
-        .then(() => {
-            server = null;
-            mockery.deregisterAll();
-            mockery.resetCache();
-        }));
+    afterEach(async () => {
+        await server.stop();
+        server = null;
+        mockery.deregisterAll();
+        mockery.resetCache();
+    });
 
     after(() => {
         mockery.disable();
@@ -165,28 +155,28 @@ describe.only('builds plugin test', () => {
             });
         });
 
-        it('saves an artifact', () => {
+        it('saves an artifact', async () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 202);
+            const putResponse = await server.inject(options);
 
-                return server.inject({
-                    url: `/builds/${mockBuildID}/foo`,
-                    headers: {
-                        'x-foo': 'bar'
-                    },
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    }
-                }).then((reply2) => {
-                    assert.equal(reply2.statusCode, 200);
-                    assert.equal(reply2.headers['x-foo'], 'bar');
-                    assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
-                    assert.isNotOk(reply2.headers.ignore);
-                    assert.equal(reply2.result, 'THIS IS A TEST');
-                });
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/builds/${mockBuildID}/foo`,
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.headers['x-foo'], 'bar');
+                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+                assert.isNotOk(getResponse.headers.ignore);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
             });
         });
     });

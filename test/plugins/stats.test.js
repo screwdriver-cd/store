@@ -1,8 +1,8 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
-const hapi = require('hapi');
+const Hapi = require('hapi');
 const mockery = require('mockery');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -20,37 +20,33 @@ describe('stats plugin test', () => {
         });
     });
 
-    beforeEach((done) => {
+    beforeEach(() => {
         mockStats = {
             reads: 15,
             writes: 10
         };
 
-        /* eslint-disable global-require */
+        // eslint-disable-next-line global-require
         plugin = require('../../plugins/stats');
-        /* eslint-enable global-require */
 
-        server = new hapi.Server();
-        server.connection({
+        server = Hapi.server({
             port: 1234
         });
 
         mockBuild = {
-            register: (srv, opt, next) => {
-                srv.expose('stats', mockStats);
-                next();
+            plugin: {
+                name: 'builds',
+                // eslint-disable-next-line no-shadow
+                async register(server) {
+                    server.expose('stats', mockStats);
+                }
             }
         };
-        mockBuild.register.attributes = {
-            name: 'builds'
-        };
 
-        server.register([
+        return server.register([
             mockBuild,
-            { register: plugin }
-        ], (err) => {
-            done(err);
-        });
+            plugin
+        ]);
     });
 
     afterEach(() => {
@@ -71,9 +67,9 @@ describe('stats plugin test', () => {
         it('returns 200 with stats', () => (
             server.inject({
                 url: '/stats'
-            }).then((reply) => {
-                assert.equal(reply.statusCode, 200);
-                assert.deepEqual(reply.result, {
+            }).then((response) => {
+                assert.equal(response.statusCode, 200);
+                assert.deepEqual(response.result, {
                     builds: mockStats
                 });
             })
