@@ -20,10 +20,8 @@ const commands = config.get('commands');
 const ecosystem = config.get('ecosystem');
 
 async function init() {
-    const server = require('../');
-
     try {
-        await server({
+        const server = await require('../')({
             cache,
             httpd,
             builds,
@@ -39,3 +37,5 @@ async function init() {
         return process.exit(1);
     }
 }
+
+init();
