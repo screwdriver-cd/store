@@ -8,9 +8,9 @@ const joi = require('joi');
  * @async  validate
  * @param  {Object}   decoded       Decoded JWT object
  * @param  {Hapi}     request       Hapi Request
- * @return {Object}   Object with isValid property, denoting JWT validity
+ * @return {Object}                 Object with isValid property, denoting JWT validity
  */
-async function validate(decoded, request) {     // eslint-disable-line
+async function validate(decoded, request) { // eslint-disable-line no-unused-vars
     // TODO: figure our what to do here
     return { isValid: true };
 }
@@ -26,17 +26,11 @@ exports.plugin = {
      * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
      */
     async register(server, options) {
-        let pluginOptions;
+        const pluginOptions = joi.attempt(options, joi.object().keys({
+            jwtPublicKey: joi.string().required()
+        }), 'Invalid config for auth plugin');
 
-        try {
-            pluginOptions = joi.attempt(options, joi.object().keys({
-                jwtPublicKey: joi.string().required()
-            }), 'Invalid config for auth plugin');
-
-            await server.register(jwt);
-        } catch (err) {
-            throw err;
-        }
+        await server.register(jwt);
 
         server.auth.strategy('token', 'jwt', {
             key: pluginOptions.jwtPublicKey,

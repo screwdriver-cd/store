@@ -81,11 +81,11 @@ exports.plugin = {
                 const buildId = request.params.id;
                 const artifact = request.params.artifact;
                 const id = `${buildId}-${artifact}`;
-                const size = Buffer.byteLength(request.payload);
                 const contents = {
                     c: request.payload,
                     h: {}
                 };
+                const size = Buffer.byteLength(request.payload);
 
                 if (username !== buildId) {
                     return boom.forbidden(`Credential only valid for ${username}`);
