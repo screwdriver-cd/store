@@ -26,10 +26,11 @@ describe('swagger plugin test', () => {
             port: 1234
         });
 
-        server.register(plugin);
+        return server.register(plugin);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await server.stop();
         server = null;
         mockery.deregisterAll();
         mockery.resetCache();

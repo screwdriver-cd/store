@@ -19,19 +19,23 @@ const builds = config.get('builds');
 const commands = config.get('commands');
 const ecosystem = config.get('ecosystem');
 
-require('../')({
-    cache,
-    httpd,
-    builds,
-    commands,
-    auth,
-    ecosystem
-}, (err, server) => {
-    if (err) {
+async function init() {
+    const server = require('../');
+
+    try {
+        await server({
+            cache,
+            httpd,
+            builds,
+            commands,
+            auth,
+            ecosystem
+        });
+
+        return winston.info('Server running at %s', server.info.uri);
+    } catch (err) {
         winston.error(err);
 
         return process.exit(1);
     }
-
-    return winston.info('Server running at %s', server.info.uri);
-});
+}

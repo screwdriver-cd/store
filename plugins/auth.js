@@ -32,11 +32,7 @@ exports.plugin = {
             pluginOptions = joi.attempt(options, joi.object().keys({
                 jwtPublicKey: joi.string().required()
             }), 'Invalid config for auth plugin');
-        } catch (err) {
-            throw err;
-        }
 
-        try {
             await server.register(jwt);
         } catch (err) {
             throw err;
