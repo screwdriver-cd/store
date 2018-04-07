@@ -5,10 +5,10 @@ exports.plugin = {
 
     /**
      * Basic healthcheck route
-     * @async  register
+     * @method register
      * @param  {Object}     server      Hapi server instance
      */
-    async register(server) {
+    register(server) {
         server.route({
             method: 'GET',
             path: '/status',

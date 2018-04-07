@@ -5,10 +5,10 @@ exports.plugin = {
 
     /**
      * Hapi interface for plugin to set up status endpoint
-     * @async  register
+     * @method register
      * @param  {Object}      server      Hapi server instance
      */
-    async register(server) {
+    register(server) {
         server.route({
             method: 'GET',
             path: '/stats',

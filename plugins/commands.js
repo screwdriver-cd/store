@@ -13,13 +13,13 @@ exports.plugin = {
 
     /**
      * Commands Plugin
-     * @async  register
+     * @method register
      * @param  {Hapi}     server                Hapi Server
      * @param  {Object}   options               Configuration
      * @param  {Integer}  options.expiresInSec  How long to keep it around
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
-    async register(server, options) {
+    register(server, options) {
         const cache = server.cache({
             segment: 'commands',
             expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
@@ -39,11 +39,11 @@ exports.plugin = {
                 try {
                     value = await cache.get(id);
                 } catch (err) {
-                    return err;
+                    throw err;
                 }
 
                 if (!value) {
-                    return boom.notFound();
+                    throw boom.notFound();
                 }
 
                 const response = h.response(Buffer.from(value.c.data));
@@ -101,7 +101,7 @@ exports.plugin = {
                 } catch (err) {
                     request.log([id, 'error'], `Failed to store in cache: ${err}`);
 
-                    return boom.serverUnavailable(err.message, err);
+                    throw boom.serverUnavailable(err.message, err);
                 }
 
                 return h.response().code(202);
