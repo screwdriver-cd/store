@@ -30,7 +30,7 @@ exports.plugin = {
         server.route([{
             method: 'GET',
             path: '/commands/{namespace}/{name}/{version}',
-            async handler(request, h) {
+            handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
 
@@ -76,7 +76,7 @@ exports.plugin = {
         }, {
             method: 'POST',
             path: '/commands/{namespace}/{name}/{version}',
-            async handler(request, h) {
+            handler: async (request, h) => {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;

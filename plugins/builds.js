@@ -30,7 +30,7 @@ exports.plugin = {
         server.route([{
             method: 'GET',
             path: '/builds/{id}/{artifact*}',
-            async handler(request, h) {
+            handler: async (request, h) => {
                 const buildId = request.params.id;
                 const artifact = request.params.artifact;
                 const id = `${buildId}-${artifact}`;
@@ -76,7 +76,7 @@ exports.plugin = {
         }, {
             method: 'PUT',
             path: '/builds/{id}/{artifact*}',
-            async handler(request, h) {
+            handler: async (request, h) => {
                 const { username } = request.auth.credentials;
                 const buildId = request.params.id;
                 const artifact = request.params.artifact;
