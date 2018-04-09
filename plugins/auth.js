@@ -11,7 +11,7 @@ const joi = require('joi');
  * @return {Object}                 Object with isValid property, denoting JWT validity
  */
 async function validate(decoded, request) { // eslint-disable-line no-unused-vars
-    // TODO: figure our what to do here
+    // TODO: figure out what to do here
     return { isValid: true };
 }
 
