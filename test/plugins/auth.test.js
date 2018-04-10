@@ -1,54 +1,93 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
-const hapi = require('hapi');
-const mockery = require('mockery');
+const Hapi = require('hapi');
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('auth plugin test', () => {
     let plugin;
     let server;
+    let options;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
-    beforeEach((done) => {
-        /* eslint-disable global-require */
+    beforeEach(() => {
+        // eslint-disable-next-line global-require
         plugin = require('../../plugins/auth');
-        /* eslint-enable global-require */
 
-        server = new hapi.Server();
-        server.connection({
+        options = {
+            jwtPublicKey: fs.readFileSync(path.join(__dirname, './data/auth.test.crt'), 'utf8')
+        };
+
+        server = Hapi.server({
             port: 1234
         });
-
-        server.register({
-            register: plugin,
-            options: {
-                jwtPublicKey: '12345'
-            }
-        }, (err) => {
-            done(err);
-        });
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await server.stop();
         server = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
     });
 
-    after(() => {
-        mockery.disable();
-    });
+    it('registers the plugin', async () => {
+        try {
+            await server.register({ plugin, options });
+        } catch (err) {
+            assert.fail(err);
+        }
 
-    it('registers the plugin', () => {
         assert.isOk(server.registrations['hapi-auth-jwt2']);
+    });
+
+    it('throws an error on incorrect public key format', async () => {
+        options.jwtPublicKey = 35345;
+
+        try {
+            await server.register({ plugin, options });
+
+            assert.fail('Error should be thrown');
+        } catch (err) {
+            assert.isOk(err);
+        }
+    });
+
+    it('can validate a route', async () => {
+        const privateKey = fs.readFileSync(path.join(__dirname, './data/auth.test.key'), 'utf8');
+        const token = jwt.sign({ data: 'some data' }, privateKey, {
+            algorithm: 'RS256'
+        });
+
+        let response;
+
+        await server.register({ plugin, options });
+
+        server.route({
+            method: 'GET',
+            path: '/',
+            options: {
+                auth: 'token'
+            },
+            handler() {
+                return 'success';
+            }
+        });
+
+        try {
+            response = await server.inject({
+                method: 'GET',
+                url: '/',
+                headers: {
+                    Authorization: token
+                }
+            });
+        } catch (err) {
+            assert.fail(err);
+        }
+
+        assert.equal(200, response.statusCode);
+        assert.equal('success', response.result);
     });
 });

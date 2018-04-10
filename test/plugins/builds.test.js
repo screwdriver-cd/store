@@ -1,8 +1,8 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
-const hapi = require('hapi');
+const Hapi = require('hapi');
 const mockery = require('mockery');
 const catmemory = require('catbox-memory');
 
@@ -20,41 +20,31 @@ describe('builds plugin test', () => {
         });
     });
 
-    beforeEach((done) => {
-        /* eslint-disable global-require */
+    beforeEach(() => {
+        // eslint-disable-next-line global-require
         plugin = require('../../plugins/builds');
-        /* eslint-enable global-require */
 
-        server = new hapi.Server({
+        server = Hapi.server({
             cache: {
                 engine: catmemory,
                 maxByteSize: 512,
                 allowMixedContent: true
-            }
-        });
-        server.connection({
+            },
             port: 1234
         });
 
         server.auth.scheme('custom', () => ({
-            authenticate: (request, reply) => reply.continue({})
+            authenticate: (request, h) => h.authenticated()
         }));
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        server.register({
-            register: plugin
-        }, (err) => {
-            if (err) {
-                return done(err);
-            }
-
-            return server.start(done);
-        });
+        return server.register({ plugin })
+            .then(() => server.start());
     });
 
-    afterEach(() => {
-        server.stop();
+    afterEach(async () => {
+        await server.stop();
         server = null;
         mockery.deregisterAll();
         mockery.resetCache();
@@ -79,35 +69,31 @@ describe('builds plugin test', () => {
                     scope: ['user']
                 },
                 url: `/builds/${mockBuildID}/foo`
-            }).then((reply) => {
-                assert.equal(reply.statusCode, 404);
+            }).then((response) => {
+                assert.equal(response.statusCode, 404);
             })
         ));
 
         describe('caching is not setup right', () => {
             let badServer;
 
-            beforeEach((done) => {
-                badServer = new hapi.Server({
+            beforeEach(() => {
+                badServer = Hapi.server({
                     cache: {
                         engine: catmemory,
                         maxByteSize: 9999999999,
                         allowMixedContent: true
-                    }
-                });
-                badServer.connection({
+                    },
                     port: 12345
                 });
 
                 badServer.auth.scheme('custom', () => ({
-                    authenticate: (request, reply) => reply.continue({})
+                    authenticate: (request, h) => h.continue
                 }));
                 badServer.auth.strategy('token', 'custom');
                 badServer.auth.strategy('session', 'custom');
 
-                badServer.register({
-                    register: plugin
-                }, done);
+                return badServer.register({ plugin });
             });
 
             afterEach(() => {
@@ -124,8 +110,8 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     },
                     url: `/builds/${mockBuildID}/foo`
-                }).then((reply) => {
-                    assert.equal(reply.statusCode, 500);
+                }).then((response) => {
+                    assert.equal(response.statusCode, 500);
                 })
             ));
         });
@@ -153,44 +139,44 @@ describe('builds plugin test', () => {
         it('returns 403 if wrong creds', () => {
             options.url = '/builds/122222/foo';
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 403);
+            return server.inject(options).then((response) => {
+                assert.equal(response.statusCode, 403);
             });
         });
 
         it('returns 5xx if cache is bad', () => {
             options.url = `/builds/${mockBuildID}/foo`;
             // @note this pushes the payload size over the 512 byte limit
-            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
-            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 503);
+            return server.inject(options).then((response) => {
+                assert.equal(response.statusCode, 503);
             });
         });
 
-        it('saves an artifact', () => {
+        it('saves an artifact', async () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 202);
+            const putResponse = await server.inject(options);
 
-                return server.inject({
-                    url: `/builds/${mockBuildID}/foo`,
-                    headers: {
-                        'x-foo': 'bar'
-                    },
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    }
-                }).then((reply2) => {
-                    assert.equal(reply2.statusCode, 200);
-                    assert.equal(reply2.headers['x-foo'], 'bar');
-                    assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
-                    assert.isNotOk(reply2.headers.ignore);
-                    assert.equal(reply2.result, 'THIS IS A TEST');
-                });
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/builds/${mockBuildID}/foo`,
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.headers['x-foo'], 'bar');
+                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+                assert.isNotOk(getResponse.headers.ignore);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
             });
         });
     });

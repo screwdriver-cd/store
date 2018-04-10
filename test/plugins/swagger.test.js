@@ -1,8 +1,8 @@
 'use strict';
 
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const sinon = require('sinon');
-const hapi = require('hapi');
+const Hapi = require('hapi');
 const mockery = require('mockery');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -18,22 +18,19 @@ describe('swagger plugin test', () => {
         });
     });
 
-    beforeEach((done) => {
-        /* eslint-disable global-require */
+    beforeEach(() => {
+        // eslint-disable-next-line global-require
         plugin = require('../../plugins/swagger');
-        /* eslint-enable global-require */
 
-        server = new hapi.Server();
-        server.connection({
+        server = Hapi.server({
             port: 1234
         });
 
-        server.register([plugin], (err) => {
-            done(err);
-        });
+        return server.register(plugin);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
+        await server.stop();
         server = null;
         mockery.deregisterAll();
         mockery.resetCache();
@@ -51,9 +48,9 @@ describe('swagger plugin test', () => {
         it('returns 200 with OK', () => (
             server.inject({
                 url: '/swagger.json'
-            }).then((reply) => {
-                assert.equal(reply.statusCode, 200);
-                assert.isOk(reply.result.swagger);
+            }).then((response) => {
+                assert.equal(response.statusCode, 200);
+                assert.isOk(response.result.swagger);
             })
         ));
     });
