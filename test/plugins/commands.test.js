@@ -197,4 +197,62 @@ describe('commands plugin test', () => {
             });
         });
     });
+
+    describe('DELETE /commands/:namespace/:name/:version', () => {
+        let options;
+
+        beforeEach(() => {
+            options = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    scope: ['user']
+                }
+            };
+        });
+
+        it('returns 404 if not found', () => {
+            server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    scope: ['user']
+                },
+                url: `/commands/${mockCommandNamespace}/foo/0.0`
+            }).then((reply) => {
+                assert.equal(reply.statusCode, 404);
+            });
+        });
+
+        it('deletes an artifact', () => {
+            options.url = `/commands/${mockCommandNamespace}/`
+                + `${mockCommandName}/${mockCommandVersion}`;
+
+            return server.inject(options).then((reply) => {
+                assert.equal(reply.statusCode, 204);
+
+                return server.inject({
+                    url: `/commands/${mockCommandNamespace}/`
+                        + `${mockCommandName}/${mockCommandVersion}`,
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    credentials: {
+                        scope: ['user']
+                    }
+                }).then((reply2) => {
+                    assert.equal(reply2.statusCode, 200);
+                    assert.equal(reply2.headers['x-foo'], 'bar');
+                    assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
+                    assert.isNotOk(reply2.headers.ignore);
+                    assert.equal(reply2.result, 'THIS IS A TEST');
+                });
+            });
+        });
+    });
 });
