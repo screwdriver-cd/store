@@ -1,8 +1,8 @@
 'use strict';
 
-const { assert } = require('chai');
+const assert = require('chai').assert;
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const hapi = require('hapi');
 const mockery = require('mockery');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -18,15 +18,19 @@ describe('logging plugin test', () => {
         });
     });
 
-    beforeEach(() => {
-        // eslint-disable-next-line global-require
+    beforeEach((done) => {
+        /* eslint-disable global-require */
         plugin = require('../../plugins/logging');
+        /* eslint-enable global-require */
 
-        server = Hapi.server({
+        server = new hapi.Server();
+        server.connection({
             port: 1234
         });
 
-        return server.register([plugin]);
+        server.register([plugin], (err) => {
+            done(err);
+        });
     });
 
     afterEach(() => {
