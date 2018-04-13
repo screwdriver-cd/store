@@ -1,8 +1,8 @@
 'use strict';
 
-const { assert } = require('chai');
+const assert = require('chai').assert;
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const hapi = require('hapi');
 const mockery = require('mockery');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -18,15 +18,19 @@ describe('status plugin test', () => {
         });
     });
 
-    beforeEach(() => {
-        // eslint-disable-next-line global-require
+    beforeEach((done) => {
+        /* eslint-disable global-require */
         plugin = require('../../plugins/status');
+        /* eslint-enable global-require */
 
-        server = Hapi.server({
+        server = new hapi.Server();
+        server.connection({
             port: 1234
         });
 
-        return server.register(plugin);
+        server.register([{ register: plugin }], (err) => {
+            done(err);
+        });
     });
 
     afterEach(() => {
@@ -47,9 +51,9 @@ describe('status plugin test', () => {
         it('returns 200 with OK', () => (
             server.inject({
                 url: '/status'
-            }).then((response) => {
-                assert.equal(response.statusCode, 200);
-                assert.deepEqual(response.result, 'OK');
+            }).then((reply) => {
+                assert.equal(reply.statusCode, 200);
+                assert.deepEqual(reply.result, 'OK');
             })
         ));
     });

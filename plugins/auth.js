@@ -4,34 +4,25 @@ const jwt = require('hapi-auth-jwt2');
 const joi = require('joi');
 
 /**
- * Validate JWT
- * @async  validate
- * @param  {Object}   decoded       Decoded JWT object
- * @param  {Hapi}     request       Hapi Request
- * @return {Object}                 Object with isValid property, denoting JWT validity
+ * Auth Plugin
+ * @method register
+ * @param  {Hapi}     server                Hapi Server
+ * @param  {Object}   options               Configuration object
+ * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
+ * @param  {Function} next                  Function to call when done
  */
-async function validate(decoded, request) { // eslint-disable-line no-unused-vars
-    // TODO: figure out what to do here
-    return { isValid: true };
-}
+exports.register = (server, options, next) => {
+    let pluginOptions;
 
-exports.plugin = {
-    name: 'auth',
-
-    /**
-     * Auth Plugin
-     * @async  register
-     * @param  {Hapi}     server                Hapi Server
-     * @param  {Object}   options               Configuration object
-     * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
-     */
-    async register(server, options) {
-        const pluginOptions = joi.attempt(options, joi.object().keys({
+    try {
+        pluginOptions = joi.attempt(options, joi.object().keys({
             jwtPublicKey: joi.string().required()
         }), 'Invalid config for auth plugin');
+    } catch (ex) {
+        return next(ex);
+    }
 
-        await server.register(jwt);
-
+    return server.register(jwt).then(() => {
         server.auth.strategy('token', 'jwt', {
             key: pluginOptions.jwtPublicKey,
             verifyOptions: {
@@ -39,7 +30,16 @@ exports.plugin = {
                 maxAge: '12h'
             },
             // This function is run once the Token has been decoded with signature
-            validate
+            validateFunc(decoded, request, cb) {
+                // TODO: figure out what to do here
+                cb(null, true);
+            }
         });
-    }
+
+        next();
+    });
+};
+
+exports.register.attributes = {
+    name: 'auth'
 };

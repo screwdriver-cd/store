@@ -1,23 +1,26 @@
 'use strict';
 
-exports.plugin = {
-    name: 'status',
+/**
+ * Basic healthcheck route
+ * @method register
+ * @param  {Hapi.Server}    server
+ * @param  {Object}         options
+ * @param  {Function} next
+ */
+exports.register = (server, options, next) => {
+    server.route({
+        method: 'GET',
+        path: '/status',
+        handler: (request, reply) => reply('OK'),
+        config: {
+            description: 'Healthcheck',
+            notes: 'Should always respond with OK',
+            tags: ['api', 'status']
+        }
+    });
+    next();
+};
 
-    /**
-     * Basic healthcheck route
-     * @method register
-     * @param  {Object}     server      Hapi server instance
-     */
-    register(server) {
-        server.route({
-            method: 'GET',
-            path: '/status',
-            handler: () => 'OK',
-            options: {
-                description: 'Healthcheck',
-                notes: 'Should always respond with OK',
-                tags: ['api', 'status']
-            }
-        });
-    }
+exports.register.attributes = {
+    name: 'status'
 };

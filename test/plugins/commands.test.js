@@ -1,8 +1,8 @@
 'use strict';
 
-const { assert } = require('chai');
+const assert = require('chai').assert;
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const hapi = require('hapi');
 const mockery = require('mockery');
 const catmemory = require('catbox-memory');
 
@@ -22,31 +22,40 @@ describe('commands plugin test', () => {
         });
     });
 
-    beforeEach(() => {
-        // eslint-disable-next-line global-require
+    beforeEach((done) => {
+        /* eslint-disable global-require */
         plugin = require('../../plugins/commands');
+        /* eslint-enable global-require */
 
-        server = Hapi.server({
+        server = new hapi.Server({
             cache: {
                 engine: catmemory,
                 maxByteSize: 512,
                 allowMixedContent: true
-            },
+            }
+        });
+        server.connection({
             port: 1234
         });
 
         server.auth.scheme('custom', () => ({
-            authenticate: (request, h) => h.authenticated()
+            authenticate: (request, reply) => reply.continue({})
         }));
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
+        server.register({
+            register: plugin
+        }, (err) => {
+            if (err) {
+                return done(err);
+            }
 
-        return server.register({ plugin })
-            .then(() => server.start());
+            return server.start(done);
+        });
     });
 
-    afterEach(async () => {
-        await server.stop();
+    afterEach(() => {
+        server.stop();
         server = null;
         mockery.deregisterAll();
         mockery.resetCache();
@@ -70,31 +79,35 @@ describe('commands plugin test', () => {
                     scope: ['user']
                 },
                 url: `/commands/${mockCommandNamespace}/foo/0.0`
-            }).then((response) => {
-                assert.equal(response.statusCode, 404);
+            }).then((reply) => {
+                assert.equal(reply.statusCode, 404);
             })
         ));
 
         describe('caching is not setup right', () => {
             let badServer;
 
-            beforeEach(() => {
-                badServer = Hapi.server({
+            beforeEach((done) => {
+                badServer = new hapi.Server({
                     cache: {
                         engine: catmemory,
                         maxByteSize: 9999999999,
                         allowMixedContent: true
-                    },
+                    }
+                });
+                badServer.connection({
                     port: 12345
                 });
 
                 badServer.auth.scheme('custom', () => ({
-                    authenticate: (request, h) => h.authenticated()
+                    authenticate: (request, reply) => reply.continue({})
                 }));
                 badServer.auth.strategy('token', 'custom');
                 badServer.auth.strategy('session', 'custom');
 
-                return badServer.register({ plugin });
+                badServer.register({
+                    register: plugin
+                }, done);
             });
 
             afterEach(() => {
@@ -111,8 +124,8 @@ describe('commands plugin test', () => {
                     },
                     url: `/commands/${mockCommandNamespace}/`
                         + `${mockCommandName}/${mockCommandVersion}`
-                }).then((response) => {
-                    assert.equal(response.statusCode, 500);
+                }).then((reply) => {
+                    assert.equal(reply.statusCode, 500);
                 })
             ));
         });
@@ -141,8 +154,8 @@ describe('commands plugin test', () => {
             options.url = '/commands/foo/bar/1.2.3';
             options.credentials.scope = ['user'];
 
-            return server.inject(options).then((response) => {
-                assert.equal(response.statusCode, 403);
+            return server.inject(options).then((reply) => {
+                assert.equal(reply.statusCode, 403);
             });
         });
 
@@ -150,37 +163,37 @@ describe('commands plugin test', () => {
             options.url = `/commands/${mockCommandNamespace}/`
                 + `${mockCommandName}/${mockCommandVersion}`;
             // @note this pushes the payload size over the 512 byte limit
-            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
-            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then((response) => {
-                assert.equal(response.statusCode, 503);
+            return server.inject(options).then((reply) => {
+                assert.equal(reply.statusCode, 503);
             });
         });
 
-        it('saves an artifact', async () => {
+        it('saves an artifact', () => {
             options.url = `/commands/${mockCommandNamespace}/`
                 + `${mockCommandName}/${mockCommandVersion}`;
 
-            const putResponse = await server.inject(options);
+            return server.inject(options).then((reply) => {
+                assert.equal(reply.statusCode, 202);
 
-            assert.equal(putResponse.statusCode, 202);
-
-            return server.inject({
-                url: `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`,
-                headers: {
-                    'x-foo': 'bar'
-                },
-                credentials: {
-                    scope: ['user']
-                }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['x-foo'], 'bar');
-                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
-                assert.isNotOk(getResponse.headers.ignore);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
+                return server.inject({
+                    url: `/commands/${mockCommandNamespace}/`
+                        + `${mockCommandName}/${mockCommandVersion}`,
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    credentials: {
+                        scope: ['user']
+                    }
+                }).then((reply2) => {
+                    assert.equal(reply2.statusCode, 200);
+                    assert.equal(reply2.headers['x-foo'], 'bar');
+                    assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
+                    assert.isNotOk(reply2.headers.ignore);
+                    assert.equal(reply2.result, 'THIS IS A TEST');
+                });
             });
         });
     });
