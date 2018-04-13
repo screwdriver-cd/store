@@ -199,10 +199,35 @@ describe('commands plugin test', () => {
     });
 
     describe('DELETE /commands/:namespace/:name/:version', () => {
-        let options;
+        let getOptions;
+        let postOptions;
+        let deleteOptions;
 
         beforeEach(() => {
-            options = {
+            getOptions = {
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    scope: ['user']
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+            postOptions = {
+                method: 'POST',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    scope: ['build'],
+                    pipelineId: 123
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+            deleteOptions = {
                 method: 'DELETE',
                 headers: {
                     'x-foo': 'bar',
@@ -211,48 +236,33 @@ describe('commands plugin test', () => {
                 },
                 credentials: {
                     scope: ['user']
-                }
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
             };
         });
 
-        it('returns 404 if not found', () => {
-            server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                credentials: {
-                    scope: ['user']
-                },
-                url: `/commands/${mockCommandNamespace}/foo/0.0`
-            }).then((reply) => {
-                assert.equal(reply.statusCode, 404);
+        it('returns 200 if not found', () => server.inject(getOptions).then((getReply) => {
+            assert.equal(getReply.statusCode, 404);
+
+            return server.inject(deleteOptions).then((deleteReply) => {
+                assert.equal(deleteReply.statusCode, 200);
             });
-        });
+        }));
 
-        it('deletes an artifact', () => {
-            options.url = `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`;
+        it('deletes an artifact', () => server.inject(postOptions).then((postReply) => {
+            assert.equal(postReply.statusCode, 202);
 
-            return server.inject(options).then((reply) => {
-                assert.equal(reply.statusCode, 204);
+            return server.inject(getOptions).then((getReply) => {
+                assert.equal(getReply.statusCode, 200);
 
-                return server.inject({
-                    url: `/commands/${mockCommandNamespace}/`
-                        + `${mockCommandName}/${mockCommandVersion}`,
-                    headers: {
-                        'x-foo': 'bar'
-                    },
-                    credentials: {
-                        scope: ['user']
-                    }
-                }).then((reply2) => {
-                    assert.equal(reply2.statusCode, 200);
-                    assert.equal(reply2.headers['x-foo'], 'bar');
-                    assert.equal(reply2.headers['content-type'], 'text/plain; charset=utf-8');
-                    assert.isNotOk(reply2.headers.ignore);
-                    assert.equal(reply2.result, 'THIS IS A TEST');
+                return server.inject(deleteOptions).then((deleteReply) => {
+                    assert.equal(deleteReply.statusCode, 200);
+
+                    return server.inject(getOptions).then((getReply2) => {
+                        assert.equal(getReply2.statusCode, 404);
+                    });
                 });
             });
-        });
+        }));
     });
 });

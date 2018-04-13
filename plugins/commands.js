@@ -145,23 +145,14 @@ exports.register = (server, options, next) => {
             },
             handler: (request, reply) => {
                 const { namespace, name, version } = request.params;
-
                 const id = `${namespace}-${name}-${version}`;
 
-                cache.drop(id, (err, value) => {
+                cache.drop(id, (err) => {
                     if (err) {
                         return reply(err);
                     }
-                    if (!value) {
-                        return reply(boom.notFound());
-                    }
 
-                    // @TODO put cache headers in here
-                    const response = reply(Buffer.from(value.c.data));
-
-                    response.headers = value.h;
-
-                    return response;
+                    return reply();
                 });
             },
             validate: {
