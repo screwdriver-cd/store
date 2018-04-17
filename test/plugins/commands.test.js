@@ -228,25 +228,25 @@ describe('commands plugin test', () => {
             };
         });
 
-        it('returns 200 if not found', () => server.inject(getOptions).then((getReply) => {
-            assert.equal(getReply.statusCode, 404);
+        it('returns 200 if not found', () => server.inject(getOptions).then((getResponse) => {
+            assert.equal(getResponse.statusCode, 404);
 
-            return server.inject(deleteOptions).then((deleteReply) => {
-                assert.equal(deleteReply.statusCode, 200);
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 200);
             });
         }));
 
-        it('deletes an artifact', () => server.inject(postOptions).then((postReply) => {
-            assert.equal(postReply.statusCode, 202);
+        it('deletes an artifact', () => server.inject(postOptions).then((postResponse) => {
+            assert.equal(postResponse.statusCode, 202);
 
-            return server.inject(getOptions).then((getReply) => {
-                assert.equal(getReply.statusCode, 200);
+            return server.inject(getOptions).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
 
-                return server.inject(deleteOptions).then((deleteReply) => {
-                    assert.equal(deleteReply.statusCode, 200);
+                return server.inject(deleteOptions).then((deleteResponse) => {
+                    assert.equal(deleteResponse.statusCode, 200);
 
-                    return server.inject(getOptions).then((getReply2) => {
-                        assert.equal(getReply2.statusCode, 404);
+                    return server.inject(getOptions).then((getResponse2) => {
+                        assert.equal(getResponse2.statusCode, 404);
                     });
                 });
             });
