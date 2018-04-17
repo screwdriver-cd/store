@@ -136,7 +136,7 @@ exports.register = (server, options, next) => {
             tags: ['api', 'commands'],
             auth: {
                 strategies: ['token'],
-                scope: ['user']
+                scope: ['build', 'user']
             },
             plugins: {
                 'hapi-swagger': {
