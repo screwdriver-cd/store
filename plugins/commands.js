@@ -127,6 +127,42 @@ exports.register = (server, options, next) => {
                 }
             }
         }
+    }, {
+        method: 'DELETE',
+        path: '/commands/{namespace}/{name}/{version}',
+        config: {
+            description: 'Delete command binary',
+            notes: 'Delete a script or binary of specific command',
+            tags: ['api', 'commands'],
+            auth: {
+                strategies: ['token'],
+                scope: ['build', 'user']
+            },
+            plugins: {
+                'hapi-swagger': {
+                    security: [{ token: [] }]
+                }
+            },
+            handler: (request, reply) => {
+                const { namespace, name, version } = request.params;
+                const id = `${namespace}-${name}-${version}`;
+
+                cache.drop(id, (err) => {
+                    if (err) {
+                        return reply(err);
+                    }
+
+                    return reply();
+                });
+            },
+            validate: {
+                params: {
+                    namespace: SCHEMA_COMMAND_NAMESPACE,
+                    name: SCHEMA_COMMAND_NAME,
+                    version: SCHEMA_COMMAND_VERSION
+                }
+            }
+        }
     }]);
 
     next();
