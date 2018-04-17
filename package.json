@@ -69,7 +69,7 @@
     "hapi-swagger": "^7.1.0",
     "hoek": "^5.0.3",
     "inert": "^4.0.2",
-    "joi": "^13.0.0",
+    "joi": "13.1.2",
     "screwdriver-data-schema": "^18.11.5",
     "verror": "^1.8.1",
     "vision": "^4.1.0",
