@@ -59,7 +59,7 @@
     "boom": "^7.2.0",
     "catbox": "^10.0.2",
     "catbox-memory": "^3.1.2",
-    "catbox-s3": "^3.1.0",
+    "catbox-s3": "^4.0.0",
     "config": "^1.30.0",
     "good": "^8.1.1",
     "good-console": "^7.1.0",
