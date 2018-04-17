@@ -131,6 +131,42 @@ exports.plugin = {
                     }
                 }
             }
+        }, {
+            method: 'DELETE',
+            path: '/commands/{namespace}/{name}/{version}',
+            handler: async (request, h) => {
+                const { namespace, name, version } = request.params;
+                const id = `${namespace}-${name}-${version}`;
+
+                try {
+                    await cache.drop(id);
+
+                    return h.response();
+                } catch (err) {
+                    throw err;
+                }
+            },
+            options: {
+                description: 'Delete command binary',
+                notes: 'Delete a script or binary of specific command',
+                tags: ['api', 'commands'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['build', 'user']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        namespace: SCHEMA_COMMAND_NAMESPACE,
+                        name: SCHEMA_COMMAND_NAME,
+                        version: SCHEMA_COMMAND_VERSION
+                    }
+                }
+            }
         }]);
     }
 };

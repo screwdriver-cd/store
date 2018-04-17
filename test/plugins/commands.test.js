@@ -184,4 +184,72 @@ describe('commands plugin test', () => {
             });
         });
     });
+
+    describe('DELETE /commands/:namespace/:name/:version', () => {
+        let getOptions;
+        let postOptions;
+        let deleteOptions;
+
+        beforeEach(() => {
+            getOptions = {
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    scope: ['user']
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+            postOptions = {
+                method: 'POST',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    scope: ['build'],
+                    pipelineId: 123
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+            deleteOptions = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    scope: ['user']
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+        });
+
+        it('returns 200 if not found', () => server.inject(getOptions).then((getReply) => {
+            assert.equal(getReply.statusCode, 404);
+
+            return server.inject(deleteOptions).then((deleteReply) => {
+                assert.equal(deleteReply.statusCode, 200);
+            });
+        }));
+
+        it('deletes an artifact', () => server.inject(postOptions).then((postReply) => {
+            assert.equal(postReply.statusCode, 202);
+
+            return server.inject(getOptions).then((getReply) => {
+                assert.equal(getReply.statusCode, 200);
+
+                return server.inject(deleteOptions).then((deleteReply) => {
+                    assert.equal(deleteReply.statusCode, 200);
+
+                    return server.inject(getOptions).then((getReply2) => {
+                        assert.equal(getReply2.statusCode, 404);
+                    });
+                });
+            });
+        }));
+    });
 });
