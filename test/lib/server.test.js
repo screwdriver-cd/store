@@ -1,6 +1,6 @@
 'use strict';
 
-const Assert = require('chai').assert;
+const { assert } = require('chai');
 const engine = require('catbox-memory');
 
 describe('server case', function () {
@@ -14,9 +14,8 @@ describe('server case', function () {
     let hapiEngine;
 
     beforeEach(() => {
-        /* eslint-disable global-require */
+        // eslint-disable-next-line global-require
         hapiEngine = require('../../lib/server');
-        /* eslint-enable global-require */
     });
 
     afterEach(() => {
@@ -24,53 +23,57 @@ describe('server case', function () {
     });
 
     describe('positive cases', () => {
-        it('does it with a different port', (done) => {
-            hapiEngine({
-                httpd: {
-                    port: 12347
-                },
-                cache: { engine },
-                auth: {
-                    jwtPublicKey: '12345'
-                },
-                commands: {},
-                ecosystem
-            }, (e, s) => {
-                const server = s;
+        it('does it with a different port', async () => {
+            let server;
 
-                if (e) {
-                    return done(e);
-                }
-
-                return server.inject({
-                    method: 'GET',
-                    url: '/v1/status',
-                    headers: {
-                        origin: ecosystem.ui
-                    }
-                }, (response) => {
-                    Assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
-                    Assert.equal(response.statusCode, 200);
-                    Assert.include(response.request.info.host, '12347');
-                    done();
+            try {
+                server = await hapiEngine({
+                    httpd: {
+                        port: 12347
+                    },
+                    cache: { engine },
+                    auth: {
+                        jwtPublicKey: '12345'
+                    },
+                    commands: {},
+                    ecosystem
                 });
+            } catch (err) {
+                // Error should not be thrown
+
+                assert.fail(err);
+            }
+
+            return server.inject({
+                method: 'GET',
+                url: '/v1/status',
+                headers: {
+                    origin: ecosystem.ui
+                }
+            }).then((response) => {
+                assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
+                assert.equal(response.statusCode, 200);
+                assert.include(response.request.info.host, '12347');
             });
         });
     });
 
     describe('negative cases', () => {
-        it('fails during registration', (done) => {
-            hapiEngine({
-                httpd: {
-                    port: 12347
-                },
-                cache: { engine },
-                commands: {},
-                ecosystem
-            }, (error) => {
-                Assert.isOk(error);
-                done();
-            });
-        });
+        it('fails during registration when no auth is provided', () => hapiEngine({
+            httpd: {
+                port: 12347
+            },
+            cache: { engine },
+            commands: {},
+            ecosystem
+        })
+            .then(() => {
+                // Error should be thrown; code should not reach here
+
+                assert.fail('No error thrown');
+            })
+            .catch((error) => {
+                assert.isOk(error);
+            }));
     });
 });

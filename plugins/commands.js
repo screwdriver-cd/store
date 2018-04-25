@@ -8,89 +8,76 @@ const SCHEMA_COMMAND_VERSION = schema.config.command.version;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
-/**
- * Commands Plugin
- * @method register
- * @param  {Hapi}     server                Hapi Server
- * @param  {Object}   options               Configuration
- * @param  {Integer}  options.expiresInSec  How long to keep it around
- * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
- * @param  {Function} next                  Function to call when done
- */
-exports.register = (server, options, next) => {
-    const cache = server.cache({
-        segment: 'commands',
-        expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
-    });
+exports.plugin = {
+    name: 'commands',
 
-    server.expose('stats', cache.stats);
-    server.route([{
-        method: 'GET',
-        path: '/commands/{namespace}/{name}/{version}',
-        config: {
-            description: 'Get command binary',
-            notes: 'Get a script or binary of specific command',
-            tags: ['api', 'commands'],
-            auth: {
-                strategies: ['token'],
-                scope: ['user', 'build']
-            },
-            plugins: {
-                'hapi-swagger': {
-                    security: [{ token: [] }]
-                }
-            },
-            handler: (request, reply) => {
+    /**
+     * Commands Plugin
+     * @method register
+     * @param  {Hapi}     server                Hapi Server
+     * @param  {Object}   options               Configuration
+     * @param  {Integer}  options.expiresInSec  How long to keep it around
+     * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
+     */
+    register(server, options) {
+        const cache = server.cache({
+            segment: 'commands',
+            expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
+        });
+
+        server.expose('stats', cache.stats);
+
+        server.route([{
+            method: 'GET',
+            path: '/commands/{namespace}/{name}/{version}',
+            handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
-
                 const id = `${namespace}-${name}-${version}`;
 
-                cache.get(id, (err, value) => {
-                    if (err) {
-                        return reply(err);
-                    }
-                    if (!value) {
-                        return reply(boom.notFound());
-                    }
+                let value;
 
-                    // @TODO put cache headers in here
-                    const response = reply(Buffer.from(value.c.data));
+                try {
+                    value = await cache.get(id);
+                } catch (err) {
+                    throw err;
+                }
 
-                    response.headers = value.h;
+                if (!value) {
+                    throw boom.notFound();
+                }
 
-                    return response;
-                });
+                const response = h.response(Buffer.from(value.c.data));
+
+                response.headers = value.h;
+
+                return response;
             },
-            validate: {
-                params: {
-                    namespace: SCHEMA_COMMAND_NAMESPACE,
-                    name: SCHEMA_COMMAND_NAME,
-                    version: SCHEMA_COMMAND_VERSION
+            options: {
+                description: 'Get command binary',
+                notes: 'Get a script or binary of specific command',
+                tags: ['api', 'commands'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['user', 'build']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        namespace: SCHEMA_COMMAND_NAMESPACE,
+                        name: SCHEMA_COMMAND_NAME,
+                        version: SCHEMA_COMMAND_VERSION
+                    }
                 }
             }
-        }
-    }, {
-        method: 'POST',
-        path: '/commands/{namespace}/{name}/{version}',
-        config: {
-            description: 'Write command',
-            notes: 'Write a script or binary of specific command',
-            tags: ['api', 'commands'],
-            payload: {
-                maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
-                parse: false
-            },
-            auth: {
-                strategies: ['token'],
-                scope: ['build']
-            },
-            plugins: {
-                'hapi-swagger': {
-                    security: [{ token: [] }]
-                }
-            },
-            handler: (request, reply) => {
-                const pipelineId = request.auth.credentials.pipelineId;
+        }, {
+            method: 'POST',
+            path: '/commands/{namespace}/{name}/{version}',
+            handler: async (request, h) => {
+                const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
                 const contents = {
@@ -109,65 +96,77 @@ exports.register = (server, options, next) => {
                 request.log([pipelineId], `Saving command of ${name} of size ${size} `
                     + `bytes with headers ${JSON.stringify(contents.h)}`);
 
-                return cache.set(id, contents, 0, (err) => {
-                    if (err) {
-                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
+                try {
+                    await cache.set(id, contents, 0);
+                } catch (err) {
+                    request.log([id, 'error'], `Failed to store in cache: ${err}`);
 
-                        return reply(boom.serverUnavailable(err.message, err));
-                    }
+                    throw boom.serverUnavailable(err.message, err);
+                }
 
-                    return reply().code(202);
-                });
+                return h.response().code(202);
             },
-            validate: {
-                params: {
-                    namespace: SCHEMA_COMMAND_NAMESPACE,
-                    name: SCHEMA_COMMAND_NAME,
-                    version: SCHEMA_COMMAND_VERSION
+            options: {
+                description: 'Write command',
+                notes: 'Write a script or binary of specific command',
+                tags: ['api', 'commands'],
+                payload: {
+                    maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
+                    parse: false
+                },
+                auth: {
+                    strategies: ['token'],
+                    scope: ['build']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        namespace: SCHEMA_COMMAND_NAMESPACE,
+                        name: SCHEMA_COMMAND_NAME,
+                        version: SCHEMA_COMMAND_VERSION
+                    }
                 }
             }
-        }
-    }, {
-        method: 'DELETE',
-        path: '/commands/{namespace}/{name}/{version}',
-        config: {
-            description: 'Delete command binary',
-            notes: 'Delete a script or binary of specific command',
-            tags: ['api', 'commands'],
-            auth: {
-                strategies: ['token'],
-                scope: ['build', 'user']
-            },
-            plugins: {
-                'hapi-swagger': {
-                    security: [{ token: [] }]
-                }
-            },
-            handler: (request, reply) => {
+        }, {
+            method: 'DELETE',
+            path: '/commands/{namespace}/{name}/{version}',
+            handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
 
-                cache.drop(id, (err) => {
-                    if (err) {
-                        return reply(err);
-                    }
+                try {
+                    await cache.drop(id);
 
-                    return reply();
-                });
+                    return h.response();
+                } catch (err) {
+                    throw err;
+                }
             },
-            validate: {
-                params: {
-                    namespace: SCHEMA_COMMAND_NAMESPACE,
-                    name: SCHEMA_COMMAND_NAME,
-                    version: SCHEMA_COMMAND_VERSION
+            options: {
+                description: 'Delete command binary',
+                notes: 'Delete a script or binary of specific command',
+                tags: ['api', 'commands'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['build', 'user']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        namespace: SCHEMA_COMMAND_NAMESPACE,
+                        name: SCHEMA_COMMAND_NAME,
+                        version: SCHEMA_COMMAND_VERSION
+                    }
                 }
             }
-        }
-    }]);
-
-    next();
-};
-
-exports.register.attributes = {
-    name: 'commands'
+        }]);
+    }
 };

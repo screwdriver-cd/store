@@ -11,7 +11,7 @@ It can easily be configured to use alternative storage locations like S3.
 
 ### Prerequisites
 
-- Node v6.0.0 or higher
+- Node v8.9.0 or higher
 
 ### From Source
 

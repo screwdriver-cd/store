@@ -2,20 +2,21 @@
 
 const swagger = require('hapi-swagger');
 
-module.exports = {
-    register: swagger,
-    options: {
-        info: {
-            title: 'Screwdriver Store Documentation',
-            version: '1'
-        },
-        securityDefinitions: {
-            token: {
-                type: 'bearer',
-                name: 'X-Token',
-                in: 'header'
-            }
-        }
+const options = {
+    info: {
+        title: 'Screwdriver Store Documentation',
+        version: '1'
     },
-    security: [{ token: [] }]
+    securityDefinitions: {
+        token: {
+            type: 'bearer',
+            name: 'X-Token',
+            in: 'header'
+        }
+    }
+};
+
+module.exports = {
+    plugin: swagger,
+    options
 };
