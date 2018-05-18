@@ -47,9 +47,15 @@ exports.plugin = {
                     throw boom.notFound();
                 }
 
-                const response = h.response(Buffer.from(value.c.data));
+                let response;
 
-                response.headers = value.h;
+                if (value.c) {
+                    response = h.response(Buffer.from(value.c.data));
+                    response.headers = value.h;
+                } else {
+                    response = h.response(Buffer.from(value));
+                    response.headers['content-type'] = 'text/plain';
+                }
 
                 return response;
             },
@@ -86,6 +92,7 @@ exports.plugin = {
                     h: {}
                 };
                 const size = Buffer.byteLength(request.payload);
+                let value = contents;
 
                 if (username !== buildId) {
                     return boom.forbidden(`Credential only valid for ${username}`);
@@ -98,11 +105,16 @@ exports.plugin = {
                     }
                 });
 
+                // For text/plain payload, upload it as Buffer
+                if (contents.h['content-type'] === 'text/plain') {
+                    value = contents.c;
+                }
+
                 request.log(buildId, `Saving ${artifact} of size ${size} bytes with `
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    await cache.set(id, contents, 0);
+                    await cache.set(id, value, 0);
                 } catch (err) {
                     request.log([id, 'error'], `Failed to store in cache: ${err}`);
 

@@ -149,6 +149,12 @@ describe('builds plugin test', () => {
             // @note this pushes the payload size over the 512 byte limit
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
+            options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
             return server.inject(options).then((response) => {
                 assert.equal(response.statusCode, 503);
@@ -158,15 +164,13 @@ describe('builds plugin test', () => {
         it('saves an artifact', async () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
+            options.headers['content-type'] = 'application/x-ndjson';
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
 
             return server.inject({
                 url: `/builds/${mockBuildID}/foo`,
-                headers: {
-                    'x-foo': 'bar'
-                },
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']
@@ -174,7 +178,29 @@ describe('builds plugin test', () => {
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['x-foo'], 'bar');
+                assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
+                assert.isNotOk(getResponse.headers.ignore);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
+            });
+        });
+
+        it('saves an artifact without headers for text/plain type', async () => {
+            options.url = `/builds/${mockBuildID}/foo`;
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/builds/${mockBuildID}/foo`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+                assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
             });
