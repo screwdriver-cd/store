@@ -205,5 +205,25 @@ describe('builds plugin test', () => {
                 assert.equal(getResponse.result, 'THIS IS A TEST');
             });
         });
+
+        it('saves an artifact and fetches it with pipeline scoped jwt', async () => {
+            options.url = `/builds/${mockBuildID}/foo`;
+
+            options.headers['content-type'] = 'application/x-ndjson';
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/builds/${mockBuildID}/foo`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['pipeline']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
+            });
+        });
     });
 });
