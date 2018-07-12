@@ -65,7 +65,7 @@ exports.plugin = {
                 tags: ['api', 'builds'],
                 auth: {
                     strategies: ['token'],
-                    scope: ['user']
+                    scope: ['user', 'pipeline']
                 },
                 plugins: {
                     'hapi-swagger': {
