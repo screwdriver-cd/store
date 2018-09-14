@@ -22,7 +22,7 @@ describe('events plugin test', () => {
 
     beforeEach(() => {
         // eslint-disable-next-line global-require
-        plugin = require('../../plugins/cache');
+        plugin = require('../../plugins/caches');
 
         server = Hapi.server({
             cache: {
@@ -55,7 +55,7 @@ describe('events plugin test', () => {
     });
 
     it('registers the plugin', () => {
-        assert.isOk(server.registrations.cache);
+        assert.isOk(server.registrations.caches);
     });
 
     describe('GET /events/:id/:cacheName', () => {
@@ -117,7 +117,7 @@ describe('events plugin test', () => {
         });
     });
 
-    describe('PUT /events/:id/:cache', () => {
+    describe('PUT /events/:id/:cacheName', () => {
         let options;
 
         beforeEach(() => {

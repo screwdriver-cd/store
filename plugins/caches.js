@@ -5,19 +5,24 @@ const boom = require('boom');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
-const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
+const DEFAULT_TTL = 24 * 60 * 60 * 1000 * 30; // 30 days
+const DEFAULT_BYTES = 1024 * 1024 * 1024 * 5; // 5 GB
 
 exports.plugin = {
-    name: 'cache',
+    name: 'caches',
 
     /**
      * Cache Plugin
      * @method  register
      * @param  {Hapi}     server                Hapi Server
+     * @param  {Object}   options               Configuration
+     * @param  {Integer}  options.expiresInSec  How long to keep it around
+     * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
     register(server, options) {
         const cache = server.cache({
-            segment: 'cache'
+            segment: 'caches',
+            expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
         });
 
         server.expose('stats', cache.stats);
@@ -84,6 +89,11 @@ exports.plugin = {
             handler: async (request, h) => {
                 const { eventId } = request.auth.credentials;
                 const eventIdParam = request.params.id;
+
+                if (eventIdParam !== eventId) {
+                    return boom.forbidden(`Credential only valid for ${eventId}`);
+                }
+
                 const cacheName = request.params.cacheName;
                 const cacheKey = `events/${eventIdParam}/${cacheName}`;
                 const contents = {
@@ -92,10 +102,6 @@ exports.plugin = {
                 };
                 const size = Buffer.byteLength(request.payload);
                 let value = contents;
-
-                if (eventIdParam !== eventId) {
-                    return boom.forbidden(`Credential only valid for ${eventId}`);
-                }
 
                 // Store all x-* and content-type headers
                 Object.keys(request.headers).forEach((header) => {

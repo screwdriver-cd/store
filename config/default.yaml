@@ -34,6 +34,12 @@ builds:
     # Upper limit on incoming uploads to builds
     maxByteSize: 1073741824 # 1GB
 
+caches:
+    # How long should caches stay around for
+    expiresInSec: 2592000000 # 30 days
+    # Upper limit on incoming uploads to cache
+    maxByteSize: 5368709120 # 5GB
+
 commands:
     # How long should commands stay around for
     expiresInSec: 31536000000 # 1 year
