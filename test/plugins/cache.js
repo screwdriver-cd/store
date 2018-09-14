@@ -55,10 +55,10 @@ describe('events plugin test', () => {
     });
 
     it('registers the plugin', () => {
-        assert.isOk(server.registrations.events);
+        assert.isOk(server.registrations.cache);
     });
 
-    describe.only('GET /events/:id/:cacheName', () => {
+    describe('GET /events/:id/:cacheName', () => {
         it('returns 404 if not found', () => (
             server.inject({
                 headers: {
