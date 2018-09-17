@@ -5,8 +5,6 @@ const boom = require('boom');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
-const DEFAULT_TTL = 24 * 60 * 60 * 1000 * 30; // 30 days
-const DEFAULT_BYTES = 1024 * 1024 * 1024 * 5; // 5 GB
 
 exports.plugin = {
     name: 'caches',
@@ -22,7 +20,7 @@ exports.plugin = {
     register(server, options) {
         const cache = server.cache({
             segment: 'caches',
-            expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
+            expiresIn: parseInt(options.expiresInSec, 10)
         });
 
         server.expose('stats', cache.stats);
@@ -133,7 +131,7 @@ exports.plugin = {
                 notes: 'Write a cache object from a specific event',
                 tags: ['api', 'events'],
                 payload: {
-                    maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
+                    maxBytes: parseInt(options.maxByteSize, 10),
                     parse: false
                 },
                 auth: {
