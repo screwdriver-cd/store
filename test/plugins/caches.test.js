@@ -39,7 +39,12 @@ describe('events plugin test', () => {
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        return server.register({ plugin })
+        return server.register({
+            plugin,
+            options: {
+                expiresInSec: '100',
+                maxByteSize: '5368709120'
+            } })
             .then(() => server.start());
     });
 
@@ -93,7 +98,12 @@ describe('events plugin test', () => {
                 badServer.auth.strategy('token', 'custom');
                 badServer.auth.strategy('session', 'custom');
 
-                return badServer.register({ plugin });
+                return badServer.register({
+                    plugin,
+                    options: {
+                        expiresInSec: '100',
+                        maxByteSize: '512'
+                    } });
             });
 
             afterEach(() => {

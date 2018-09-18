@@ -7,7 +7,7 @@ const config = require('config');
 
 // Setup Caching strategy
 const strategyConfig = config.get('strategy');
-let strategyModule = `catbox-${strategyConfig.plugin}`;
+const strategyModule = `catbox-${strategyConfig.plugin}`;
 
 // eslint-disable-next-line import/no-dynamic-require
 const strategy = require(strategyModule);
@@ -16,15 +16,22 @@ const cache = Object.assign({ engine: strategy }, strategyConfig[strategyConfig.
 const httpd = config.get('httpd');
 const auth = config.get('auth');
 const builds = config.get('builds');
+const caches = config.get('caches');
 const commands = config.get('commands');
 const ecosystem = config.get('ecosystem');
 
+/**
+ * Init function
+ * @method init
+ */
 async function init() {
     try {
+        // eslint-disable-next-line global-require
         const server = await require('../')({
             cache,
             httpd,
             builds,
+            caches,
             commands,
             auth,
             ecosystem
