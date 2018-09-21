@@ -24,6 +24,12 @@ builds:
     # Upper limit on incoming uploads to builds
     maxByteSize: BUILDS_MAX_BYTES
 
+caches:
+    # How long should cache stay around for
+    expiresInSec: CACHES_EXPIRE_TIME
+    # Upper limit on incoming uploads to cache
+    maxByteSize: CACHES_MAX_BYTES
+
 commands:
     # How long should commands stay around for
     expiresInSec: COMMANDS_EXPIRE_TIME

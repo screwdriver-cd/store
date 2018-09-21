@@ -36,7 +36,11 @@ describe('server case', function () {
                         jwtPublicKey: '12345'
                     },
                     commands: {},
-                    ecosystem
+                    ecosystem,
+                    caches: {
+                        expiresInSec: 100,
+                        maxByteSize: 1073741824
+                    }
                 });
             } catch (err) {
                 // Error should not be thrown
@@ -69,7 +73,6 @@ describe('server case', function () {
         })
             .then(() => {
                 // Error should be thrown; code should not reach here
-
                 assert.fail('No error thrown');
             })
             .catch((error) => {
