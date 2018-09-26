@@ -150,6 +150,48 @@ exports.plugin = {
                     }
                 }
             }
+        }, {
+            method: 'DELETE',
+            path: '/events/{id}/{cacheName}',
+            handler: async (request, h) => {
+                const { eventId } = request.auth.credentials;
+                const eventIdParam = request.params.id;
+
+                if (eventIdParam !== eventId) {
+                    return boom.forbidden(`Credential only valid for ${eventId}`);
+                }
+
+                const cacheName = request.params.cacheName;
+                const cacheKey = `events/${eventIdParam}/${cacheName}`;
+
+                try {
+                    await cache.drop(cacheKey);
+
+                    return h.response();
+                } catch (err) {
+                    throw err;
+                }
+            },
+            options: {
+                description: 'Delete event cache',
+                notes: 'Delete a specific cached object from an event',
+                tags: ['api', 'events'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['build']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        id: SCHEMA_EVENT_ID,
+                        cacheName: SCHEMA_CACHE_NAME
+                    }
+                }
+            }
         }]);
     }
 };
