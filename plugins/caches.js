@@ -73,7 +73,7 @@ exports.plugin = {
                 }
 
                 // Update last modified timestamp
-                return awsClient.update(cacheKey, (e) => {
+                return awsClient.updateLastModified(cacheKey, (e) => {
                     if (e) {
                         console.log('Failed to update last modified timestamp: ', e);
                     }
@@ -137,7 +137,15 @@ exports.plugin = {
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    await cache.set(cacheKey, value, 0);
+                    if (!awsClient) {
+                        await cache.set(cacheKey, value, 0);
+                    } else {
+                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) => {
+                            if (!areEqual) {
+                                await cache.set(cacheKey, value, 0);
+                            }
+                        });
+                    }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
 
