@@ -8,23 +8,28 @@ class AwsClient {
      * Construct a Client
      * @method constructor
      * @param  {Object}    config
-     * @param  {String}    config.accessKeyId
-     * @param  {String}    config.secretAccessKey
-     * @param  {String}    config.region
-     * @param  {String}    config.endpoint
-     * @param  {String}    config.forcePathStyle
+     * @param  {String}    config.accessKeyId        AWS access key ID.
+     * @param  {String}    config.secretAccessKey    AWS secret access key.
+     * @param  {String}    config.region             the region to send service requests to
+     * @param  {String}    config.forcePathStyle     whether to force path style URLs for S3 objects
+     * @param  {String}    config.bucket             s3 bucket
      */
     constructor(config) {
         this.client = new AWS.S3({
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
             region: config.region,
-            endpoint: config.endpoint,
             s3ForcePathStyle: config.forcePathStyle
         });
         this.bucket = config.bucket;
     }
 
+    /**
+     * Update Last Modified field in S3 file
+     * @method updateLastModified
+     * @param  {String}           cacheKey      cache key
+     * @param  {Function}         callback      callback function
+     */
     updateLastModified(cacheKey, callback) {
         let params = {
             Bucket: this.bucket,
@@ -55,20 +60,24 @@ class AwsClient {
         });
     }
 
+    /**
+     * Compare the checksum of local cache with the one in S3
+     * @method compareChecksum
+     * @param  {String}        localCache     content of localFile
+     * @param  {String}        cacheKey       cache key
+     * @param  {Function}      callback       callback function
+     */
     compareChecksum(localCache, cacheKey, callback) {
         const params = {
             Bucket: this.bucket,
-            key: cacheKey
+            Key: cacheKey
         };
-
         const localmd5 = crypto.createHash('md5').update(localCache).digest('hex');
 
-        // get StorageClass value
         return this.client.headObject(params, (err, data) => {
             if (err) {
                 return callback(err);
             }
-
             const remotemd5 = data.Metadata.md5;
 
             if (localmd5 !== remotemd5) {
