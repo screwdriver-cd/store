@@ -74,6 +74,12 @@ exports.plugin = {
 
                 // Update last modified timestamp
                 return awsClient.updateLastModified(cacheKey, (e) => {
+                if (strategyConfig.plugin !== 's3') {
+                    return response;
+                }
+
+                // Update last modified timestamp to reset the lifecycle
+                return awsClient.update(cacheKey, (e) => {
                     if (e) {
                         console.log('Failed to update last modified timestamp: ', e);
                     }
