@@ -3,16 +3,19 @@
 const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
+const crypto = require('crypto');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('aws helper test', () => {
+describe('aws helper test', () => {
     const accessKeyId = 'TEST_ACCESS_KEY_ID';
     const secretAccessKey = 'TEST_SECRET_ACCESS_KEY';
     const region = 'TEST_REGION';
     const s3ForcePathStyle = 'false';
     const cacheKey = 'test';
     const testBucket = 'TEST_REGION';
+    const localCache = 'THIS IS A TEST';
+    const testMD5 = crypto.createHash('md5').update(localCache).digest('hex');
     let sdkMock;
     let AwsClient;
     let clientMock;
@@ -28,7 +31,11 @@ describe.only('aws helper test', () => {
     beforeEach(() => {
         clientMock = sinon.stub();
         clientMock.prototype.headObject = sinon.stub().yieldsAsync(null, {
-            StorageClass: 'STANDARD' });
+            StorageClass: 'STANDARD',
+            Metadata: {
+                md5: testMD5
+            }
+        });
         clientMock.prototype.copyObject = sinon.stub().yieldsAsync(null);
 
         sdkMock = {
@@ -94,6 +101,47 @@ describe.only('aws helper test', () => {
         clientMock.prototype.copyObject = sinon.stub().yieldsAsync(err);
 
         return awsClient.updateLastModified(cacheKey, (e) => {
+            assert.deepEqual(e, err);
+            done();
+        });
+    });
+
+    it('returns true if checksum are the same', (done) => {
+        const headParam = {
+            Bucket: testBucket,
+            Key: cacheKey
+        };
+
+        return awsClient.compareChecksum(localCache, cacheKey, (err, checksum) => {
+            assert.calledWith(clientMock.prototype.headObject, headParam);
+            assert.isNull(err);
+            assert.isTrue(checksum);
+            done();
+        });
+    });
+
+    it('returns false if checksum are not the same', (done) => {
+        const headParam = {
+            Bucket: testBucket,
+            Key: cacheKey
+        };
+
+        const newLocalCache = 'A DIFFERENT FILE';
+
+        return awsClient.compareChecksum(newLocalCache, cacheKey, (err, checksum) => {
+            assert.calledWith(clientMock.prototype.headObject, headParam);
+            assert.isNull(err);
+            assert.isFalse(checksum);
+            done();
+        });
+    });
+
+    it('returns err if fails to get headObject', (done) => {
+        const err = new Error('failed to get headObject');
+
+        clientMock.prototype.headObject = sinon.stub().yieldsAsync(err);
+
+        return awsClient.compareChecksum(localCache, cacheKey, (e) => {
             assert.deepEqual(e, err);
             done();
         });
