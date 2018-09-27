@@ -8,18 +8,17 @@ class AwsClient {
      * Construct a Client
      * @method constructor
      * @param  {Object}    config
-     * @param  {String}    config.accessKeyId
-     * @param  {String}    config.secretAccessKey
-     * @param  {String}    config.region
-     * @param  {String}    config.endpoint
-     * @param  {String}    config.forcePathStyle
+     * @param  {String}    config.accessKeyId        AWS access key ID.
+     * @param  {String}    config.secretAccessKey    AWS secret access key.
+     * @param  {String}    config.region             the region to send service requests to
+     * @param  {String}    config.forcePathStyle     whether to force path style URLs for S3 objects
+     * @param  {String}    config.bucket             s3 bucket
      */
     constructor(config) {
         this.client = new AWS.S3({
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
             region: config.region,
-            endpoint: config.endpoint,
             s3ForcePathStyle: config.forcePathStyle
         });
         this.bucket = config.bucket;

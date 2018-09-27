@@ -3,7 +3,7 @@
 const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
-const AwsClient = require('../helper/aws');
+const AwsClient = require('../helpers/aws');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
