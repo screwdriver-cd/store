@@ -68,6 +68,12 @@ exports.plugin = {
                     response.headers['content-type'] = 'text/plain';
                 }
 
+                if (!awsClient) {
+                    return response;
+                }
+
+                // Update last modified timestamp
+                return awsClient.updateLastModified(cacheKey, (e) => {
                 if (strategyConfig.plugin !== 's3') {
                     return response;
                 }
@@ -137,7 +143,15 @@ exports.plugin = {
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    await cache.set(cacheKey, value, 0);
+                    if (!awsClient) {
+                        await cache.set(cacheKey, value, 0);
+                    } else {
+                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) => {
+                            if (!areEqual) {
+                                await cache.set(cacheKey, value, 0);
+                            }
+                        });
+                    }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
 
