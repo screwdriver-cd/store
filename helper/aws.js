@@ -56,7 +56,7 @@ class AwsClient {
     }
 
     compareChecksum(localCache, cacheKey, callback) {
-        let params = {
+        const params = {
             Bucket: this.bucket,
             key: cacheKey
         };

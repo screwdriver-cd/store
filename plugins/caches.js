@@ -68,18 +68,12 @@ exports.plugin = {
                     response.headers['content-type'] = 'text/plain';
                 }
 
-                if (!awsClient) {
-                    return response;
-                }
-
-                // Update last modified timestamp
-                return awsClient.updateLastModified(cacheKey, (e) => {
                 if (strategyConfig.plugin !== 's3') {
                     return response;
                 }
 
                 // Update last modified timestamp to reset the lifecycle
-                return awsClient.update(cacheKey, (e) => {
+                return awsClient.updateLastModified(cacheKey, (e) => {
                     if (e) {
                         console.log('Failed to update last modified timestamp: ', e);
                     }
@@ -146,11 +140,12 @@ exports.plugin = {
                     if (!awsClient) {
                         await cache.set(cacheKey, value, 0);
                     } else {
-                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) => {
-                            if (!areEqual) {
-                                await cache.set(cacheKey, value, 0);
-                            }
-                        });
+                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) =>
+                            areEqual
+                            // if (!areEqual) {
+                            //     await cache.set(cacheKey, value, 0);
+                            // }
+                        );
                     }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
