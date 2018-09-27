@@ -2,6 +2,8 @@
 
 const joi = require('joi');
 const boom = require('boom');
+const config = require('config');
+const AwsClient = require('../helper/aws');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
@@ -22,6 +24,13 @@ exports.plugin = {
             segment: 'caches',
             expiresIn: parseInt(options.expiresInSec, 10)
         });
+
+        const strategyConfig = config.get('strategy');
+        let awsClient;
+
+        if (strategyConfig.plugin === 's3') {
+            awsClient = new AwsClient(strategyConfig.s3);
+        }
 
         server.expose('stats', cache.stats);
         server.route([{
@@ -59,7 +68,18 @@ exports.plugin = {
                     response.headers['content-type'] = 'text/plain';
                 }
 
-                return response;
+                if (!awsClient) {
+                    return response;
+                }
+
+                // Update last modified timestamp
+                return awsClient.update(cacheKey, (e) => {
+                    if (e) {
+                        console.log('Failed to update last modified timestamp: ', e);
+                    }
+
+                    return response;
+                });
             },
             options: {
                 description: 'Read event cache',
