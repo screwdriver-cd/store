@@ -3,7 +3,7 @@
 const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
-const AwsClient = require('../helper/aws');
+const AwsClient = require('../helpers/aws');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
@@ -140,12 +140,17 @@ exports.plugin = {
                     if (!awsClient) {
                         await cache.set(cacheKey, value, 0);
                     } else {
-                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) =>
-                            areEqual
-                            // if (!areEqual) {
-                            //     await cache.set(cacheKey, value, 0);
-                            // }
-                        );
+                        await awsClient.compareChecksum(value, cacheKey, async (err, areEqual) => {
+                            if (err) {
+                                console.log('Failed to compare checksums: ', err);
+                            }
+
+                            if (!areEqual) {
+                                await cache.set(cacheKey, value, 0);
+                            } else {
+                                console.log('Cache has not changed, not setting cache.');
+                            }
+                        });
                     }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
