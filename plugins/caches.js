@@ -140,12 +140,17 @@ exports.plugin = {
                     if (!awsClient) {
                         await cache.set(cacheKey, value, 0);
                     } else {
-                        awsClient.compareChecksum(value, cacheKey, (err, areEqual) =>
-                            areEqual
-                            // if (!areEqual) {
-                            //     await cache.set(cacheKey, value, 0);
-                            // }
-                        );
+                        await awsClient.compareChecksum(value, cacheKey, async (err, areEqual) => {
+                            if (err) {
+                                console.log('Failed to compare checksums: ', err);
+                            }
+
+                            if (!areEqual) {
+                                await cache.set(cacheKey, value, 0);
+                            } else {
+                                console.log('Cache has not changed, not setting cache.');
+                            }
+                        });
                     }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
