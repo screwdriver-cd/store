@@ -71,7 +71,7 @@ describe('aws helper test', () => {
         };
         const copyParam = {
             Bucket: testBucket,
-            CopySource: `${testBucket}/v1/caches/${cacheKey}`,
+            CopySource: `${testBucket}/caches/${cacheKey}`,
             Key: cacheKey,
             StorageClass: 'STANDARD'
         };

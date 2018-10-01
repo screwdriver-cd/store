@@ -44,7 +44,7 @@ class AwsClient {
 
             params = {
                 Bucket: this.bucket,
-                CopySource: `${this.bucket}/v1/caches/${cacheKey}`,
+                CopySource: `${this.bucket}/caches/${cacheKey}`,
                 Key: cacheKey,
                 StorageClass: data.StorageClass
             };
