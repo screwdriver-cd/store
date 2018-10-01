@@ -329,4 +329,74 @@ describe('events plugin test', () => {
             });
         });
     });
+
+    describe('DELETE /events/:id/:cacheName', () => {
+        let getOptions;
+        let putOptions;
+        let deleteOptions;
+
+        beforeEach(() => {
+            getOptions = {
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    eventId: mockEventID,
+                    scope: ['build']
+                },
+                url: `/events/${mockEventID}/foo`
+            };
+            putOptions = {
+                method: 'PUT',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    eventId: mockEventID,
+                    scope: ['build']
+                },
+                url: `/events/${mockEventID}/foo`
+            };
+            deleteOptions = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    eventId: mockEventID,
+                    scope: ['build']
+                },
+                url: `/events/${mockEventID}/foo`
+            };
+        });
+
+        it('returns 200 if not found', () => server.inject(getOptions).then((getResponse) => {
+            assert.equal(getResponse.statusCode, 404);
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 200);
+            });
+        }));
+
+        it('deletes an event cache', () => server.inject(putOptions).then((postResponse) => {
+            assert.equal(postResponse.statusCode, 202);
+
+            return server.inject(getOptions).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+
+                return server.inject(deleteOptions).then((deleteResponse) => {
+                    assert.equal(deleteResponse.statusCode, 200);
+
+                    return server.inject(getOptions).then((getResponse2) => {
+                        assert.equal(getResponse2.statusCode, 404);
+                    });
+                });
+            });
+        }));
+    });
 });
