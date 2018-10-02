@@ -12,6 +12,8 @@ describe('events plugin test', () => {
     const mockEventID = 1899999;
     let plugin;
     let server;
+    let awsClientMock;
+    let configMock;
 
     before(() => {
         mockery.enable({
@@ -21,6 +23,20 @@ describe('events plugin test', () => {
     });
 
     beforeEach(() => {
+        configMock = {
+            get: sinon.stub().returns({
+                plugin: 's3'
+            })
+        };
+
+        awsClientMock = sinon.stub().returns({
+            updateLastModified: sinon.stub().yields(null),
+            compareChecksum: sinon.stub().yields(null, false)
+        });
+
+        mockery.registerMock('../helpers/aws', awsClientMock);
+        mockery.registerMock('config', configMock);
+
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/caches');
 
@@ -233,6 +249,83 @@ describe('events plugin test', () => {
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
+            });
+        });
+
+        describe('local file and remote file are the same', () => {
+            let cacheConfigMock;
+            let cacheAwsClientMock;
+            let cachePlugin;
+            let cacheServer;
+
+            beforeEach(() => {
+                mockery.deregisterAll();
+                mockery.resetCache();
+
+                cacheConfigMock = {
+                    get: sinon.stub().returns({
+                        plugin: 's3'
+                    })
+                };
+
+                cacheAwsClientMock = sinon.stub().returns({
+                    updateLastModified: sinon.stub().yields(null),
+                    compareChecksum: sinon.stub().yields(null, true)
+                });
+
+                mockery.registerMock('../helpers/aws', cacheAwsClientMock);
+                mockery.registerMock('config', cacheConfigMock);
+
+                // eslint-disable-next-line global-require
+                cachePlugin = require('../../plugins/caches');
+
+                cacheServer = Hapi.server({
+                    cache: {
+                        engine: catmemory,
+                        maxByteSize: 512,
+                        allowMixedContent: true
+                    },
+                    port: 1235
+                });
+
+                cacheServer.auth.scheme('custom', () => ({
+                    authenticate: (request, h) => h.authenticated()
+                }));
+                cacheServer.auth.strategy('token', 'custom');
+                cacheServer.auth.strategy('session', 'custom');
+
+                return cacheServer.register({
+                    plugin: cachePlugin,
+                    options: {
+                        expiresInSec: '100',
+                        maxByteSize: '5368709120'
+                    } })
+                    .then(() => cacheServer.start());
+            });
+
+            afterEach(() => {
+                cacheServer = null;
+                mockery.deregisterAll();
+                mockery.resetCache();
+            });
+
+            it('does not save cache if checksums are equal', async () => {
+                options.url = `/events/${mockEventID}/foo`;
+
+                options.headers['content-type'] = 'application/x-ndjson';
+                const putResponse = await cacheServer.inject(options);
+
+                assert.equal(putResponse.statusCode, 202);
+
+                return cacheServer.inject({
+                    url: `/events/${mockEventID}/foo`,
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
+                }).then((getResponse) => {
+                    assert.equal(getResponse.statusCode, 404);
+                });
             });
         });
     });

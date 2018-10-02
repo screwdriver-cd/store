@@ -5,3 +5,4 @@ npm-debug.log
 .*.swp
 config/local.*
 .nyc_output
+package-lock.json

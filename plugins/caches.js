@@ -2,6 +2,8 @@
 
 const joi = require('joi');
 const boom = require('boom');
+const config = require('config');
+const AwsClient = require('../helpers/aws');
 
 const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
@@ -22,6 +24,13 @@ exports.plugin = {
             segment: 'caches',
             expiresIn: parseInt(options.expiresInSec, 10)
         });
+
+        const strategyConfig = config.get('strategy');
+        let awsClient;
+
+        if (strategyConfig.plugin === 's3') {
+            awsClient = new AwsClient(strategyConfig.s3);
+        }
 
         server.expose('stats', cache.stats);
         server.route([{
@@ -59,7 +68,18 @@ exports.plugin = {
                     response.headers['content-type'] = 'text/plain';
                 }
 
-                return response;
+                if (strategyConfig.plugin !== 's3') {
+                    return response;
+                }
+
+                // Update last modified timestamp to reset the lifecycle
+                return awsClient.updateLastModified(cacheKey, (e) => {
+                    if (e) {
+                        console.log('Failed to update last modified timestamp: ', e);
+                    }
+
+                    return response;
+                });
             },
             options: {
                 description: 'Read event cache',
@@ -117,7 +137,21 @@ exports.plugin = {
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    await cache.set(cacheKey, value, 0);
+                    if (!awsClient) {
+                        await cache.set(cacheKey, value, 0);
+                    } else {
+                        await awsClient.compareChecksum(value, cacheKey, async (err, areEqual) => {
+                            if (err) {
+                                console.log('Failed to compare checksums: ', err);
+                            }
+
+                            if (!areEqual) {
+                                await cache.set(cacheKey, value, 0);
+                            } else {
+                                console.log('Cache has not changed, not setting cache.');
+                            }
+                        });
+                    }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
 
