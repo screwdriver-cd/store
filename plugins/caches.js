@@ -35,7 +35,7 @@ exports.plugin = {
         server.expose('stats', cache.stats);
         server.route([{
             method: 'GET',
-            path: '/events/{id}/{cacheName}',
+            path: '/caches/events/{id}/{cacheName}',
             handler: async (request, h) => {
                 const { eventId } = request.auth.credentials;
                 const eventIdParam = request.params.id;
@@ -103,7 +103,7 @@ exports.plugin = {
             }
         }, {
             method: 'PUT',
-            path: '/events/{id}/{cacheName}',
+            path: '/caches/events/{id}/{cacheName}',
             handler: async (request, h) => {
                 const { eventId } = request.auth.credentials;
                 const eventIdParam = request.params.id;
@@ -186,7 +186,7 @@ exports.plugin = {
             }
         }, {
             method: 'DELETE',
-            path: '/events/{id}/{cacheName}',
+            path: '/caches/events/{id}/{cacheName}',
             handler: async (request, h) => {
                 const { eventId } = request.auth.credentials;
                 const eventIdParam = request.params.id;
