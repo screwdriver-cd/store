@@ -72,14 +72,20 @@ exports.plugin = {
                     return response;
                 }
 
-                // Update last modified timestamp to reset the lifecycle
-                return awsClient.updateLastModified(cacheKey, (e) => {
-                    if (e) {
-                        console.log('Failed to update last modified timestamp: ', e);
-                    }
+                try {
+                    // Update last modified timestamp to reset the lifecycle
+                    await awsClient.updateLastModified(`caches/${cacheKey}`, (e) => {
+                        if (e) {
+                            console.log('Failed to update last modified timestamp: ', e);
+                        }
+                    });
+                } catch (err) {
+                    request.log([cacheName, 'error'], `Failed to get from cache: ${err}`);
 
-                    return response;
-                });
+                    throw boom.serverUnavailable(err.message, err);
+                }
+
+                return response;
             },
             options: {
                 description: 'Read event cache',
@@ -140,17 +146,18 @@ exports.plugin = {
                     if (!awsClient) {
                         await cache.set(cacheKey, value, 0);
                     } else {
-                        await awsClient.compareChecksum(value, cacheKey, async (err, areEqual) => {
-                            if (err) {
-                                console.log('Failed to compare checksums: ', err);
-                            }
+                        await awsClient.compareChecksum(value.c,
+                            `caches/${cacheKey}`, async (err, areEqual) => {
+                                if (err) {
+                                    console.log('Failed to compare checksums: ', err);
+                                }
 
-                            if (!areEqual) {
-                                await cache.set(cacheKey, value, 0);
-                            } else {
-                                console.log('Cache has not changed, not setting cache.');
-                            }
-                        });
+                                if (!areEqual) {
+                                    await cache.set(cacheKey, value, 0);
+                                } else {
+                                    console.log('Cache has not changed, not setting cache.');
+                                }
+                            });
                     }
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
