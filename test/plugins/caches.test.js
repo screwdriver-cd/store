@@ -79,7 +79,7 @@ describe('events plugin test', () => {
         assert.isOk(server.registrations.caches);
     });
 
-    describe('GET /events/:id/:cacheName', () => {
+    describe('GET /caches/events/:id/:cacheName', () => {
         it('returns 404 if not found', () => (
             server.inject({
                 headers: {
@@ -89,7 +89,7 @@ describe('events plugin test', () => {
                     eventId: mockEventID,
                     scope: ['build']
                 },
-                url: `/events/${mockEventID}/foo`
+                url: `/caches/events/${mockEventID}/foo`
             }).then((response) => {
                 assert.equal(response.statusCode, 404);
             })
@@ -135,7 +135,7 @@ describe('events plugin test', () => {
                         eventId: mockEventID,
                         scope: ['build']
                     },
-                    url: `/events/${mockEventID}/foo`
+                    url: `/caches/events/${mockEventID}/foo`
                 }).then((response) => {
                     assert.equal(response.statusCode, 500);
                 })
@@ -143,7 +143,7 @@ describe('events plugin test', () => {
         });
     });
 
-    describe('PUT /events/:id/:cacheName', () => {
+    describe('PUT /caches/events/:id/:cacheName', () => {
         let options;
 
         beforeEach(() => {
@@ -163,7 +163,7 @@ describe('events plugin test', () => {
         });
 
         it('returns 403 if wrong creds', () => {
-            options.url = '/events/122222/foo';
+            options.url = '/caches/events/122222/foo';
 
             return server.inject(options).then((response) => {
                 assert.equal(response.statusCode, 403);
@@ -171,7 +171,7 @@ describe('events plugin test', () => {
         });
 
         it('returns 5xx if cache is bad', () => {
-            options.url = `/events/${mockEventID}/foo`;
+            options.url = `/caches/events/${mockEventID}/foo`;
             // @note this pushes the payload size over the 512 byte limit
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
@@ -188,7 +188,7 @@ describe('events plugin test', () => {
         });
 
         it('saves a cache', async () => {
-            options.url = `/events/${mockEventID}/foo`;
+            options.url = `/caches/events/${mockEventID}/foo`;
 
             options.headers['content-type'] = 'application/x-ndjson';
             const putResponse = await server.inject(options);
@@ -196,7 +196,7 @@ describe('events plugin test', () => {
             assert.equal(putResponse.statusCode, 202);
 
             return server.inject({
-                url: `/events/${mockEventID}/foo`,
+                url: `/caches/events/${mockEventID}/foo`,
                 credentials: {
                     eventId: mockEventID,
                     scope: ['build']
@@ -211,14 +211,14 @@ describe('events plugin test', () => {
         });
 
         it('saves a cache without headers for text/plain type', async () => {
-            options.url = `/events/${mockEventID}/foo`;
+            options.url = `/caches/events/${mockEventID}/foo`;
 
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
 
             return server.inject({
-                url: `/events/${mockEventID}/foo`,
+                url: `/caches/events/${mockEventID}/foo`,
                 credentials: {
                     eventId: mockEventID,
                     scope: ['build']
@@ -233,7 +233,7 @@ describe('events plugin test', () => {
         });
 
         it('saves a cache and fetches it with build scoped jwt', async () => {
-            options.url = `/events/${mockEventID}/foo`;
+            options.url = `/caches/events/${mockEventID}/foo`;
 
             options.headers['content-type'] = 'application/x-ndjson';
             const putResponse = await server.inject(options);
@@ -241,7 +241,7 @@ describe('events plugin test', () => {
             assert.equal(putResponse.statusCode, 202);
 
             return server.inject({
-                url: `/events/${mockEventID}/foo`,
+                url: `/caches/events/${mockEventID}/foo`,
                 credentials: {
                     eventId: mockEventID,
                     scope: ['build']
@@ -310,7 +310,7 @@ describe('events plugin test', () => {
             });
 
             it('does not save cache if checksums are equal', async () => {
-                options.url = `/events/${mockEventID}/foo`;
+                options.url = `/caches/events/${mockEventID}/foo`;
 
                 options.headers['content-type'] = 'application/x-ndjson';
                 const putResponse = await cacheServer.inject(options);
@@ -318,7 +318,7 @@ describe('events plugin test', () => {
                 assert.equal(putResponse.statusCode, 202);
 
                 return cacheServer.inject({
-                    url: `/events/${mockEventID}/foo`,
+                    url: `/caches/events/${mockEventID}/foo`,
                     credentials: {
                         eventId: mockEventID,
                         scope: ['build']
@@ -330,7 +330,7 @@ describe('events plugin test', () => {
         });
     });
 
-    describe('DELETE /events/:id/:cacheName', () => {
+    describe('DELETE /caches/events/:id/:cacheName', () => {
         let getOptions;
         let putOptions;
         let deleteOptions;
@@ -344,7 +344,7 @@ describe('events plugin test', () => {
                     eventId: mockEventID,
                     scope: ['build']
                 },
-                url: `/events/${mockEventID}/foo`
+                url: `/caches/events/${mockEventID}/foo`
             };
             putOptions = {
                 method: 'PUT',
@@ -358,7 +358,7 @@ describe('events plugin test', () => {
                     eventId: mockEventID,
                     scope: ['build']
                 },
-                url: `/events/${mockEventID}/foo`
+                url: `/caches/events/${mockEventID}/foo`
             };
             deleteOptions = {
                 method: 'DELETE',
@@ -371,7 +371,7 @@ describe('events plugin test', () => {
                     eventId: mockEventID,
                     scope: ['build']
                 },
-                url: `/events/${mockEventID}/foo`
+                url: `/caches/events/${mockEventID}/foo`
             };
         });
 
