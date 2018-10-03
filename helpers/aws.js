@@ -46,7 +46,7 @@ class AwsClient {
                 Bucket: this.bucket,
                 CopySource: `${this.bucket}/caches/${cacheKey}`,
                 Key: cacheKey,
-                StorageClass: data.StorageClass
+                StorageClass: data.StorageClass || 'STANDARD'
             };
 
             // update storage class to same value to update last modified: https://alestic.com/2013/09/s3-lifecycle-extend
