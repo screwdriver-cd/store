@@ -1,7 +1,6 @@
 'use strict';
 
 const AWS = require('aws-sdk');
-const crypto = require('crypto');
 
 class AwsClient {
     /**
@@ -57,34 +56,6 @@ class AwsClient {
 
                 return callback(null);
             });
-        });
-    }
-
-    /**
-     * Compare the checksum of local cache with the one in S3
-     * @method compareChecksum
-     * @param  {String}        localCache     content of localFile
-     * @param  {String}        cacheKey       cache key
-     * @param  {Function}      callback       callback function
-     */
-    compareChecksum(localCache, cacheKey, callback) {
-        const params = {
-            Bucket: this.bucket,
-            Key: cacheKey
-        };
-        const localmd5 = crypto.createHash('md5').update(localCache).digest('hex');
-
-        return this.client.headObject(params, (err, data) => {
-            if (err) {
-                return callback(err);
-            }
-            const remotemd5 = data.Metadata.md5;
-
-            if (localmd5 !== remotemd5) {
-                return callback(null, false);
-            }
-
-            return callback(null, true);
         });
     }
 }

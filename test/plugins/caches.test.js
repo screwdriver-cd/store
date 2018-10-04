@@ -30,8 +30,7 @@ describe('events plugin test', () => {
         };
 
         awsClientMock = sinon.stub().returns({
-            updateLastModified: sinon.stub().yields(null),
-            compareChecksum: sinon.stub().yields(null, false)
+            updateLastModified: sinon.stub().yields(null)
         });
 
         mockery.registerMock('../helpers/aws', awsClientMock);
@@ -92,6 +91,21 @@ describe('events plugin test', () => {
                 url: `/caches/events/${mockEventID}/foo`
             }).then((response) => {
                 assert.equal(response.statusCode, 404);
+            })
+        ));
+
+        it('returns 403 if credentials is not valid', () => (
+            server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    eventId: 5555,
+                    scope: ['build']
+                },
+                url: `/caches/events/${mockEventID}/foo`
+            }).then((response) => {
+                assert.equal(response.statusCode, 403);
             })
         ));
 
@@ -251,83 +265,6 @@ describe('events plugin test', () => {
                 assert.equal(getResponse.result, 'THIS IS A TEST');
             });
         });
-
-        describe('local file and remote file are the same', () => {
-            let cacheConfigMock;
-            let cacheAwsClientMock;
-            let cachePlugin;
-            let cacheServer;
-
-            beforeEach(() => {
-                mockery.deregisterAll();
-                mockery.resetCache();
-
-                cacheConfigMock = {
-                    get: sinon.stub().returns({
-                        plugin: 's3'
-                    })
-                };
-
-                cacheAwsClientMock = sinon.stub().returns({
-                    updateLastModified: sinon.stub().yields(null),
-                    compareChecksum: sinon.stub().yields(null, true)
-                });
-
-                mockery.registerMock('../helpers/aws', cacheAwsClientMock);
-                mockery.registerMock('config', cacheConfigMock);
-
-                // eslint-disable-next-line global-require
-                cachePlugin = require('../../plugins/caches');
-
-                cacheServer = Hapi.server({
-                    cache: {
-                        engine: catmemory,
-                        maxByteSize: 512,
-                        allowMixedContent: true
-                    },
-                    port: 1235
-                });
-
-                cacheServer.auth.scheme('custom', () => ({
-                    authenticate: (request, h) => h.authenticated()
-                }));
-                cacheServer.auth.strategy('token', 'custom');
-                cacheServer.auth.strategy('session', 'custom');
-
-                return cacheServer.register({
-                    plugin: cachePlugin,
-                    options: {
-                        expiresInSec: '100',
-                        maxByteSize: '5368709120'
-                    } })
-                    .then(() => cacheServer.start());
-            });
-
-            afterEach(() => {
-                cacheServer = null;
-                mockery.deregisterAll();
-                mockery.resetCache();
-            });
-
-            it('does not save cache if checksums are equal', async () => {
-                options.url = `/caches/events/${mockEventID}/foo`;
-
-                options.headers['content-type'] = 'application/x-ndjson';
-                const putResponse = await cacheServer.inject(options);
-
-                assert.equal(putResponse.statusCode, 202);
-
-                return cacheServer.inject({
-                    url: `/caches/events/${mockEventID}/foo`,
-                    credentials: {
-                        eventId: mockEventID,
-                        scope: ['build']
-                    }
-                }).then((getResponse) => {
-                    assert.equal(getResponse.statusCode, 404);
-                });
-            });
-        });
     });
 
     describe('DELETE /caches/events/:id/:cacheName', () => {
@@ -382,6 +319,14 @@ describe('events plugin test', () => {
                 assert.equal(deleteResponse.statusCode, 200);
             });
         }));
+
+        it('returns 403 if credentials is not valid', () => {
+            deleteOptions.credentials.eventId = 5555;
+
+            return server.inject(deleteOptions).then((response) => {
+                assert.equal(response.statusCode, 403);
+            });
+        });
 
         it('deletes an event cache', () => server.inject(putOptions).then((postResponse) => {
             assert.equal(postResponse.statusCode, 202);
