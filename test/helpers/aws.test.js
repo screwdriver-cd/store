@@ -105,45 +105,4 @@ describe('aws helper test', () => {
             done();
         });
     });
-
-    it('returns true if checksum are the same', (done) => {
-        const headParam = {
-            Bucket: testBucket,
-            Key: cacheKey
-        };
-
-        return awsClient.compareChecksum(localCache, cacheKey, (err, checksum) => {
-            assert.calledWith(clientMock.prototype.headObject, headParam);
-            assert.isNull(err);
-            assert.isTrue(checksum);
-            done();
-        });
-    });
-
-    it('returns false if checksum are not the same', (done) => {
-        const headParam = {
-            Bucket: testBucket,
-            Key: cacheKey
-        };
-
-        const newLocalCache = 'A DIFFERENT FILE';
-
-        return awsClient.compareChecksum(newLocalCache, cacheKey, (err, checksum) => {
-            assert.calledWith(clientMock.prototype.headObject, headParam);
-            assert.isNull(err);
-            assert.isFalse(checksum);
-            done();
-        });
-    });
-
-    it('returns err if fails to get headObject', (done) => {
-        const err = new Error('failed to get headObject');
-
-        clientMock.prototype.headObject = sinon.stub().yieldsAsync(err);
-
-        return awsClient.compareChecksum(localCache, cacheKey, (e) => {
-            assert.deepEqual(e, err);
-            done();
-        });
-    });
 });

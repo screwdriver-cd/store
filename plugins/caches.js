@@ -143,22 +143,7 @@ exports.plugin = {
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    if (!awsClient) {
-                        await cache.set(cacheKey, value, 0);
-                    } else {
-                        await awsClient.compareChecksum(value.c,
-                            `caches/${cacheKey}`, async (err, areEqual) => {
-                                if (err) {
-                                    console.log('Failed to compare checksums: ', err);
-                                }
-
-                                if (!areEqual) {
-                                    await cache.set(cacheKey, value, 0);
-                                } else {
-                                    console.log('Cache has not changed, not setting cache.');
-                                }
-                            });
-                    }
+                    await cache.set(cacheKey, value, 0);
                 } catch (err) {
                     request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
 
