@@ -55,9 +55,9 @@ strategy:
         allowMixedContent: true
     s3:
         # Amazon access key
-        accessKeyId: YOUR-KEY-ID
+        accessKeyId: null
         # Amazon secret access key
-        secretAccessKey: YOUR-KEY-SECRET
+        secretAccessKey: null
         # Amazon S3 region
         region: YOUR-REGION
         # Amazon S3 bucket that you have write access to
