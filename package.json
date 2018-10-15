@@ -59,6 +59,7 @@
     "aws-sdk": "^2.323.0",
     "boom": "^7.2.0",
     "catbox": "^10.0.2",
+    "catbox-disk": "^3.0.0",
     "catbox-memory": "^3.1.2",
     "catbox-s3": "^4.0.0",
     "config": "^1.30.0",

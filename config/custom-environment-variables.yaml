@@ -38,6 +38,12 @@ commands:
 
 strategy:
     plugin: STRATEGY
+    disk:
+        # Reference for the following options: https://github.com/mirusresearch/catbox-disk
+        # existing dir to store the cache
+        cachePath: DISK_CACHE_PATH
+        # number of milliseconds between each cache cleanup for disk space recovery. Set to 0 to deactivate entirely.
+        cleanEvery: DISK_CLEAN_EVERY
     memory:
         # Upper limit on the number of bytes that can be stored in the cache
         maxByteSize: MEMORY_MAX_BYTES
