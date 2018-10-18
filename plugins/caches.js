@@ -134,7 +134,7 @@ exports.plugin = {
                     }
                 });
 
-                // For text/plain payload or application/zip, upload it as Buffer
+                // For application/zip, upload it as Buffer
                 // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
                 // and might create issue on large payload
                 if (contents.h['content-type'] === 'application/zip') {
