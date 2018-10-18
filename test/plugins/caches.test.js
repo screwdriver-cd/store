@@ -239,7 +239,7 @@ describe('events plugin test', () => {
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'application/zip; charset=utf-8');
+                assert.equal(getResponse.headers['content-type'], 'application/zip');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
