@@ -67,12 +67,12 @@ describe('aws helper test', () => {
     it('update last modified', (done) => {
         const headParam = {
             Bucket: testBucket,
-            Key: cacheKey
+            Key: `caches/${cacheKey}`
         };
         const copyParam = {
             Bucket: testBucket,
             CopySource: `${testBucket}/caches/${cacheKey}`,
-            Key: cacheKey,
+            Key: `caches/${cacheKey}`,
             StorageClass: 'STANDARD'
         };
 

@@ -64,7 +64,7 @@ exports.plugin = {
                     response = h.response(Buffer.from(value.c.data));
                     response.headers = value.h;
                 } else {
-                    response = h.response(Buffer.from(value));
+                    response = h.response(value);
                     response.headers['content-type'] = 'application/zip';
                 }
 
@@ -74,7 +74,7 @@ exports.plugin = {
 
                 try {
                     // Update last modified timestamp to reset the lifecycle
-                    await awsClient.updateLastModified(`caches/${cacheKey}`, (e) => {
+                    await awsClient.updateLastModified(cacheKey, (e) => {
                         if (e) {
                             console.log('Failed to update last modified timestamp: ', e);
                         }
