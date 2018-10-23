@@ -80,7 +80,7 @@ describe('events plugin test', () => {
     });
 
     describe('Invalid scope', () => {
-        it('returns 403 if scope is not valid', () => (
+        it('returns 400 Bad Request if scope is not valid', () => (
             server.inject({
                 headers: {
                     'x-foo': 'bar'
@@ -91,7 +91,7 @@ describe('events plugin test', () => {
                 },
                 url: `/caches/invalid/${mockEventID}/foo`
             }).then((response) => {
-                assert.equal(response.statusCode, 403);
+                assert.equal(response.statusCode, 400);
             })
         ));
     });
