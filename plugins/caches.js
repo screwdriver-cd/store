@@ -5,7 +5,8 @@ const boom = require('boom');
 const config = require('config');
 const AwsClient = require('../helpers/aws');
 
-const SCHEMA_EVENT_ID = joi.number().integer().positive().label('Event ID');
+const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).label('Scope Name');
+const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
 
 exports.plugin = {
@@ -35,17 +36,52 @@ exports.plugin = {
         server.expose('stats', cache.stats);
         server.route([{
             method: 'GET',
-            path: '/caches/events/{id}/{cacheName}',
+            path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const { eventId } = request.auth.credentials;
-                const eventIdParam = request.params.id;
+                let cacheName;
+                let cacheKey;
 
-                if (eventIdParam !== eventId) {
-                    return boom.forbidden(`Credential only valid for ${eventId}`);
+                switch (request.params.scope) {
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
+
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
+
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
+
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
                 }
 
-                const cacheName = request.params.cacheName;
-                const cacheKey = `events/${eventIdParam}/${cacheName}`;
                 let value;
 
                 try {
@@ -88,9 +124,9 @@ exports.plugin = {
                 return response;
             },
             options: {
-                description: 'Read event cache',
-                notes: 'Get a specific cached object from an event',
-                tags: ['api', 'events'],
+                description: 'Read event/job/pipeline cache',
+                notes: 'Get a specific cached object from an event, job or pipeline',
+                tags: ['api', 'events', 'jobs', 'pipelines'],
                 auth: {
                     strategies: ['token'],
                     scope: ['build']
@@ -102,24 +138,64 @@ exports.plugin = {
                 },
                 validate: {
                     params: {
-                        id: SCHEMA_EVENT_ID,
+                        scope: SCHEMA_SCOPE_NAME,
+                        id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
                     }
                 }
             }
         }, {
             method: 'PUT',
-            path: '/caches/events/{id}/{cacheName}',
+            path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const { eventId } = request.auth.credentials;
-                const eventIdParam = request.params.id;
+                let cacheName;
+                let cacheKey;
+                let logId;
 
-                if (eventIdParam !== eventId) {
-                    return boom.forbidden(`Credential only valid for ${eventId}`);
+                switch (request.params.scope) {
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
+
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    logId = eventId;
+                    break;
+                }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
+
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    logId = jobId;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
+
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    logId = pipelineId;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
                 }
 
-                const cacheName = request.params.cacheName;
-                const cacheKey = `events/${eventIdParam}/${cacheName}`;
                 const contents = {
                     c: request.payload,
                     h: {}
@@ -141,7 +217,7 @@ exports.plugin = {
                     value = contents.c;
                 }
 
-                request.log(eventId, `Saving ${cacheName} of size ${size} bytes with `
+                request.log(logId, `Saving ${cacheName} of size ${size} bytes with `
                     + `headers ${JSON.stringify(contents.h)}`);
 
                 try {
@@ -155,9 +231,9 @@ exports.plugin = {
                 return h.response().code(202);
             },
             options: {
-                description: 'Write event cache',
-                notes: 'Write a cache object from a specific event',
-                tags: ['api', 'events'],
+                description: 'Write event/job/pipeline cache',
+                notes: 'Write a cache object from a specific event, job or pipeline',
+                tags: ['api', 'events', 'jobs', 'pipelines'],
                 payload: {
                     maxBytes: parseInt(options.maxByteSize, 10),
                     parse: false
@@ -173,24 +249,59 @@ exports.plugin = {
                 },
                 validate: {
                     params: {
-                        id: SCHEMA_EVENT_ID,
+                        scope: SCHEMA_SCOPE_NAME,
+                        id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
                     }
                 }
             }
         }, {
             method: 'DELETE',
-            path: '/caches/events/{id}/{cacheName}',
+            path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const { eventId } = request.auth.credentials;
-                const eventIdParam = request.params.id;
+                let cacheName;
+                let cacheKey;
 
-                if (eventIdParam !== eventId) {
-                    return boom.forbidden(`Credential only valid for ${eventId}`);
+                switch (request.params.scope) {
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
+
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    break;
                 }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
 
-                const cacheName = request.params.cacheName;
-                const cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
+
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
+
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
+                }
 
                 try {
                     await cache.drop(cacheKey);
@@ -201,9 +312,9 @@ exports.plugin = {
                 }
             },
             options: {
-                description: 'Delete event cache',
-                notes: 'Delete a specific cached object from an event',
-                tags: ['api', 'events'],
+                description: 'Delete event/job/pipeline cache',
+                notes: 'Delete a specific cached object from an event, job or pipeline',
+                tags: ['api', 'events', 'jobs', 'pipelines'],
                 auth: {
                     strategies: ['token'],
                     scope: ['build']
@@ -215,7 +326,8 @@ exports.plugin = {
                 },
                 validate: {
                     params: {
-                        id: SCHEMA_EVENT_ID,
+                        scope: SCHEMA_SCOPE_NAME,
+                        id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
                     }
                 }
