@@ -32,7 +32,7 @@ class AwsClient {
     updateLastModified(cacheKey, callback) {
         let params = {
             Bucket: this.bucket,
-            Key: cacheKey
+            Key: `caches/${cacheKey}`
         };
 
         // get StorageClass value
@@ -44,7 +44,7 @@ class AwsClient {
             params = {
                 Bucket: this.bucket,
                 CopySource: `${this.bucket}/caches/${cacheKey}`,
-                Key: cacheKey,
+                Key: `caches/${cacheKey}`,
                 StorageClass: data.StorageClass || 'STANDARD'
             };
 
