@@ -10,8 +10,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('events plugin test', () => {
     const mockEventID = 1899999;
-    const mockJobId = 10000;
-    const mockPipelineId = 20000;
+    const mockJobID = 10000;
     let plugin;
     let server;
     let awsClientMock;
@@ -80,7 +79,7 @@ describe('events plugin test', () => {
         assert.isOk(server.registrations.caches);
     });
 
-    describe('Invalid scope' () => {
+    describe('Invalid scope', () => {
         it('returns 403 if scope is not valid', () => (
             server.inject({
                 headers: {

@@ -38,42 +38,48 @@ exports.plugin = {
             method: 'GET',
             path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const cacheName;
-                const cacheKey;
+                let cacheName;
+                let cacheKey;
 
                 switch (request.params.scope) {
-                    case 'events':
-                        const { eventId } = request.auth.credentials;
-                        const eventIdParam = request.params.id;
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
 
-                        if (eventIdParam !== eventId) {
-                            return boom.forbidden(`Credential only valid for ${eventId}`);
-                        }
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `events/${eventIdParam}/${cacheName}`;
-                    case 'jobs':
-                        const { jobId } = request.auth.credentials;
-                        const jobIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
 
-                        if (jobIdParam !== jobId) {
-                            return boom.forbidden(`Credential only valid for ${jobId}`);
-                        }
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `jobs/${jobIdParam}/${cacheName}`;
-                    case 'pipelines':
-                        const { pipelineId } = request.auth.credentials;
-                        const pipelineIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
 
-                        if (pipelineIdParam !== pipelineId) {
-                            return boom.forbidden(`Credential only valid for ${pipelineId}`);
-                        }
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
-                    default:
-                        return boom.forbidden(`Invalid scope`);
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
                 }
 
                 let value;
@@ -142,46 +148,52 @@ exports.plugin = {
             method: 'PUT',
             path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const cacheName;
-                const cacheKey;
-                const logId;
+                let cacheName;
+                let cacheKey;
+                let logId;
 
                 switch (request.params.scope) {
-                    case 'events':
-                        const { eventId } = request.auth.credentials;
-                        const eventIdParam = request.params.id;
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
 
-                        if (eventIdParam !== eventId) {
-                            return boom.forbidden(`Credential only valid for ${eventId}`);
-                        }
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `events/${eventIdParam}/${cacheName}`;
-                        logId = eventId;
-                    case 'jobs':
-                        const { jobId } = request.auth.credentials;
-                        const jobIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    logId = eventId;
+                    break;
+                }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
 
-                        if (jobIdParam !== jobId) {
-                            return boom.forbidden(`Credential only valid for ${jobId}`);
-                        }
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `jobs/${jobIdParam}/${cacheName}`;
-                        logId = jobId;
-                    case 'pipelines':
-                        const { pipelineId } = request.auth.credentials;
-                        const pipelineIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    logId = jobId;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
 
-                        if (pipelineIdParam !== pipelineId) {
-                            return boom.forbidden(`Credential only valid for ${pipelineId}`);
-                        }
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
-                        logId = pipelineId;
-                    default:
-                        return boom.forbidden(`Invalid scope`);
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    logId = pipelineId;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
                 }
 
                 const contents = {
@@ -247,42 +259,48 @@ exports.plugin = {
             method: 'DELETE',
             path: '/caches/{scope}/{id}/{cacheName}',
             handler: async (request, h) => {
-                const cacheName;
-                const cacheKey;
+                let cacheName;
+                let cacheKey;
 
                 switch (request.params.scope) {
-                    case 'events':
-                        const { eventId } = request.auth.credentials;
-                        const eventIdParam = request.params.id;
+                case 'events': {
+                    const { eventId } = request.auth.credentials;
+                    const eventIdParam = request.params.id;
 
-                        if (eventIdParam !== eventId) {
-                            return boom.forbidden(`Credential only valid for ${eventId}`);
-                        }
+                    if (eventIdParam !== eventId) {
+                        return boom.forbidden(`Credential only valid for ${eventId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `events/${eventIdParam}/${cacheName}`;
-                    case 'jobs':
-                        const { jobId } = request.auth.credentials;
-                        const jobIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `events/${eventIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'jobs': {
+                    const { jobId } = request.auth.credentials;
+                    const jobIdParam = request.params.id;
 
-                        if (jobIdParam !== jobId) {
-                            return boom.forbidden(`Credential only valid for ${jobId}`);
-                        }
+                    if (jobIdParam !== jobId) {
+                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `jobs/${jobIdParam}/${cacheName}`;
-                    case 'pipelines':
-                        const { pipelineId } = request.auth.credentials;
-                        const pipelineIdParam = request.params.id;
+                    cacheName = request.params.cacheName;
+                    cacheKey = `jobs/${jobIdParam}/${cacheName}`;
+                    break;
+                }
+                case 'pipelines': {
+                    const { pipelineId } = request.auth.credentials;
+                    const pipelineIdParam = request.params.id;
 
-                        if (pipelineIdParam !== pipelineId) {
-                            return boom.forbidden(`Credential only valid for ${pipelineId}`);
-                        }
+                    if (pipelineIdParam !== pipelineId) {
+                        return boom.forbidden(`Credential only valid for ${pipelineId}`);
+                    }
 
-                        cacheName = request.params.cacheName;
-                        cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
-                    default:
-                        return boom.forbidden(`Invalid scope`);
+                    cacheName = request.params.cacheName;
+                    cacheKey = `pipelines/${pipelineIdParam}/${cacheName}`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
                 }
 
                 try {
