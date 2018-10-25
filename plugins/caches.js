@@ -100,8 +100,8 @@ exports.plugin = {
                     response = h.response(Buffer.from(value.c.data));
                     response.headers = value.h;
                 } else {
-                    response = h.response(value);
-                    response.headers['content-type'] = 'application/zip';
+                    response = h.response(Buffer.from(value));
+                    response.headers['content-type'] = 'text/plain';
                 }
 
                 if (strategyConfig.plugin !== 's3') {
@@ -210,10 +210,10 @@ exports.plugin = {
                     }
                 });
 
-                // For application/zip, upload it as Buffer
+                // For text/plain, upload it as Buffer
                 // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
                 // and might create issue on large payload
-                if (contents.h['content-type'] === 'application/zip') {
+                if (contents.h['content-type'] === 'text/plain') {
                     value = contents.c;
                 }
 
