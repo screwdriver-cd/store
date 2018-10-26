@@ -263,7 +263,7 @@ describe('events plugin test', () => {
                 payload: 'THIS IS A TEST',
                 headers: {
                     'x-foo': 'bar',
-                    'content-type': 'application/zip',
+                    'content-type': 'text/plain',
                     ignore: 'true'
                 },
                 credentials: {
@@ -321,7 +321,7 @@ describe('events plugin test', () => {
             });
         });
 
-        it('saves a cache without headers for application/zip type', async () => {
+        it('saves a cache without headers for text/plain type', async () => {
             options.url = `/caches/events/${mockEventID}/foo`;
 
             const putResponse = await server.inject(options);
@@ -336,7 +336,7 @@ describe('events plugin test', () => {
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'application/zip');
+                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
@@ -373,7 +373,7 @@ describe('events plugin test', () => {
                 payload: 'THIS IS A TEST',
                 headers: {
                     'x-foo': 'bar',
-                    'content-type': 'application/zip',
+                    'content-type': 'text/plain',
                     ignore: 'true'
                 },
                 credentials: {
@@ -431,7 +431,7 @@ describe('events plugin test', () => {
             });
         });
 
-        it('saves a cache without headers for application/zip type', async () => {
+        it('saves a cache without headers for text/plain type', async () => {
             options.url = `/caches/jobs/${mockJobID}/foo`;
 
             const putResponse = await server.inject(options);
@@ -446,7 +446,7 @@ describe('events plugin test', () => {
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'application/zip');
+                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
