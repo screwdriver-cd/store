@@ -105,4 +105,26 @@ describe('aws helper test', () => {
             done();
         });
     });
+
+    it('returns err if fails to listObjects', (done) => {
+        const err = new Error('failed to run listObjects');
+
+        clientMock.prototype.listObjects = sinon.stub().yieldsAsync(err);
+
+        return awsClient.invalidateCache(cacheKey, (e) => {
+            assert.deepEqual(e, err);
+            done();
+        });
+    });
+
+    it('returns err if fails to deleteObjects', (done) => {
+        const err = new Error('failed to run deleteObjects');
+
+        clientMock.prototype.listObjects = sinon.stub().yieldsAsync(err);
+
+        return awsClient.invalidateCache(cacheKey, (e) => {
+            assert.deepEqual(e, err);
+            done();
+        });
+    });
 });

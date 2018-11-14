@@ -332,6 +332,64 @@ exports.plugin = {
                     }
                 }
             }
+        }, {
+            method: 'DELETE',
+            path: '/caches/{scope}/{id}',
+            handler: async (request, h) => {
+                let cachePath;
+
+                switch (request.params.scope) {
+                case 'events': {
+                    break;
+                }
+                case 'jobs': {
+                    const jobIdParam = request.params.id;
+
+                    cachePath = `jobs/${jobIdParam}/`;
+                    break;
+                }
+                case 'pipelines': {
+                    const pipelineIdParam = request.params.id;
+
+                    cachePath = `pipelines/${pipelineIdParam}`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
+                }
+
+                try {
+                    await awsClient.invalidateCache(cachePath, (e) => {
+                        if (e) {
+                            console.log('Failed to invalidate cache: ', e);
+                        }
+                    });
+
+                    return h.response();
+                } catch (err) {
+                    throw err;
+                }
+            },
+            options: {
+                description: 'Invalidate cache folder',
+                notes: 'Delete entire cache folder for a job or pipeline',
+                tags: ['api', 'events', 'jobs', 'pipelines'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['user']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        scope: SCHEMA_SCOPE_NAME,
+                        id: SCHEMA_SCOPE_ID
+                    }
+                }
+            }
         }]);
     }
 };
