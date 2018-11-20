@@ -76,7 +76,7 @@ class AwsClient {
         return this.client.listObjects(params, (e, data) => {
             if (e) return callback(e);
 
-            if (data.isTruncated) return callback();
+            if (data.Contents.length === 0) return callback();
 
             params = { Bucket: this.bucket };
             params.Delete = { Objects: [] };
@@ -85,9 +85,9 @@ class AwsClient {
                 params.Delete.Objects.push({ Key: content.Key });
             });
 
-            return this.client.deleteObjects(params, (err, res) => {
+            return this.client.deleteObjects(params, (err) => {
                 if (err) return callback(err);
-                if (res.isTruncated) return self.invalidateCache(this.bucket, callback);
+                if (data.isTruncated) return self.invalidateCache(cachePath, callback);
 
                 return callback();
             });

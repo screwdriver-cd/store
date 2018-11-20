@@ -343,7 +343,7 @@ exports.plugin = {
 
                 let cachePath;
                 const apiUrl = config.get('ecosystem.api');
-                const payload = {
+                const opts = {
                     url: `${apiUrl}/v4/isAdmin`,
                     method: 'GET',
                     headers: {
@@ -355,12 +355,19 @@ exports.plugin = {
 
                 switch (request.params.scope) {
                 case 'events': {
-                    return h.response();
+                    const eventIdParam = request.params.id;
+
+                    opts.qs = {
+                        eventId: eventIdParam
+                    };
+
+                    cachePath = `events/${eventIdParam}/`;
+                    break;
                 }
                 case 'jobs': {
                     const jobIdParam = request.params.id;
 
-                    payload.qs = {
+                    opts.qs = {
                         jobId: jobIdParam
                     };
 
@@ -370,11 +377,11 @@ exports.plugin = {
                 case 'pipelines': {
                     const pipelineIdParam = request.params.id;
 
-                    payload.qs = {
+                    opts.qs = {
                         pipelineId: pipelineIdParam
                     };
 
-                    cachePath = `pipelines/${pipelineIdParam}`;
+                    cachePath = `pipelines/${pipelineIdParam}/`;
                     break;
                 }
                 default:
@@ -382,8 +389,8 @@ exports.plugin = {
                 }
 
                 try {
-                    await req(payload, (err, response) => {
-                        if (!err && response.statusCode === 200) {
+                    await req(opts, (err, response) => {
+                        if (!err && response === true) {
                             return awsClient.invalidateCache(cachePath, (e) => {
                                 if (e) {
                                     console.log('Failed to invalidate cache: ', e);
