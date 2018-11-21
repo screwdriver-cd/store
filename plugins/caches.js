@@ -389,21 +389,21 @@ exports.plugin = {
                 }
 
                 return new Promise((resolve, reject) => req(opts, (err, response) => {
-                    if (err) {
-                        return reject(err);
+                    if (!err && response.body === true) {
+                        return awsClient.invalidateCache(cachePath, (e) => {
+                            if (e) {
+                                return reject(e);
+                            }
+
+                            return resolve();
+                        });
                     }
 
-                    if (response.body === false) {
+                    if (!err && response.body === false) {
                         return reject('Permission denied');
                     }
 
-                    return awsClient.invalidateCache(cachePath, (e) => {
-                        if (e) {
-                            return reject(e);
-                        }
-
-                        return resolve();
-                    });
+                    return reject(err);
                 })).then(() => h.response().code(200))
                     .catch((err) => {
                         if (err === 'Permission denied') {
