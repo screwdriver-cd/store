@@ -36,7 +36,9 @@ describe('events plugin test', () => {
             invalidateCache: sinon.stub().yields(null)
         });
 
-        reqMock = sinon.stub().yields(null, {
+        reqMock = sinon.stub();
+
+        reqMock.yieldsAsync({
             statusCode: 403
         });
 
@@ -638,35 +640,9 @@ describe('events plugin test', () => {
     });
 
     describe('DELETE /caches/:scope/:id', () => {
-        let getOptions;
-        let putOptions;
         let deleteOptions;
 
         beforeEach(() => {
-            getOptions = {
-                headers: {
-                    'x-foo': 'bar'
-                },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
-                },
-                url: `/caches/jobs/${mockJobID}/foo`
-            };
-            putOptions = {
-                method: 'PUT',
-                payload: 'THIS IS A TEST',
-                headers: {
-                    'x-foo': 'bar',
-                    'content-type': 'text/plain',
-                    ignore: 'true'
-                },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
-                },
-                url: `/caches/jobs/${mockJobID}/foo`
-            };
             deleteOptions = {
                 method: 'DELETE',
                 headers: {
@@ -682,18 +658,36 @@ describe('events plugin test', () => {
             };
         });
 
-        it('Throws error if user cannot invalidate cache', () =>
-            server.inject(putOptions).then((postResponse) => {
-                assert.equal(postResponse.statusCode, 202);
+        it('Returns 200 if successfully invalidate cache', () => {
+            reqMock.yieldsAsync(null, {
+                statusCode: 200,
+                body: true
+            });
 
-                return server.inject(getOptions).then((getResponse) => {
-                    assert.equal(getResponse.statusCode, 200);
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 200);
+            });
+        });
 
-                    return server.inject(deleteOptions).then((deleteResponse) => {
-                        assert.equal(deleteResponse.statusCode, 403);
-                    });
-                });
-            })
-        );
+        it('Returns 403 if user does not have permission', () => {
+            reqMock.yieldsAsync(null, {
+                statusCode: 200,
+                body: false
+            });
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 403);
+            });
+        });
+
+        it('Returns 500 if user cannot invalidate cache', () => {
+            const err = new Error('bad');
+
+            reqMock.yieldsAsync(err);
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 500);
+            });
+        });
     });
 });

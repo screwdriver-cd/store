@@ -336,7 +336,7 @@ exports.plugin = {
         }, {
             method: 'DELETE',
             path: '/caches/{scope}/{id}',
-            handler: async (request, h) => {
+            handler: (request, h) => {
                 if (strategyConfig.plugin !== 's3') {
                     return h.response();
                 }
@@ -388,27 +388,30 @@ exports.plugin = {
                     return boom.forbidden('Invalid scope');
                 }
 
-                try {
-                    await req(opts, (err, response) => {
-                        if (!err && response === true) {
-                            return awsClient.invalidateCache(cachePath, (e) => {
-                                if (e) {
-                                    console.log('Failed to invalidate cache: ', e);
-                                }
+                return new Promise((resolve, reject) => req(opts, (err, response) => {
+                    if (err) {
+                        return reject(err);
+                    }
 
-                                return Promise.resolve();
-                            });
-                        } else if (!err) {
-                            return Promise.reject(new Error('User cannot invalidate cache.'));
+                    if (response.body === false) {
+                        return reject('Permission denied');
+                    }
+
+                    return awsClient.invalidateCache(cachePath, (e) => {
+                        if (e) {
+                            return reject(e);
                         }
 
-                        return Promise.reject(err);
+                        return resolve();
                     });
-                } catch (err) {
-                    return boom.forbidden(err);
-                }
+                })).then(() => h.response().code(200))
+                    .catch((err) => {
+                        if (err === 'Permission denied') {
+                            return boom.forbidden(err);
+                        }
 
-                return h.response();
+                        return h.response().code(500);
+                    });
             },
             options: {
                 description: 'Invalidate cache folder',
