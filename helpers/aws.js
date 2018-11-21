@@ -58,6 +58,41 @@ class AwsClient {
             });
         });
     }
+
+    /**
+     * Delete all cached objects at cachePath
+     * @method invalidateCache
+     * @param {String}              cachePath       Path to cache
+     * @param {Function}            callback        callback function
+     */
+    invalidateCache(cachePath, callback) {
+        const self = this;
+
+        let params = {
+            Bucket: this.bucket,
+            Prefix: `caches/${cachePath}`
+        };
+
+        return this.client.listObjects(params, (e, data) => {
+            if (e) return callback(e);
+
+            if (data.Contents.length === 0) return callback();
+
+            params = { Bucket: this.bucket };
+            params.Delete = { Objects: [] };
+
+            data.Contents.forEach((content) => {
+                params.Delete.Objects.push({ Key: content.Key });
+            });
+
+            return this.client.deleteObjects(params, (err) => {
+                if (err) return callback(err);
+                if (data.isTruncated) return self.invalidateCache(cachePath, callback);
+
+                return callback();
+            });
+        });
+    }
 }
 
 module.exports = AwsClient;

@@ -14,6 +14,7 @@ describe('events plugin test', () => {
     let plugin;
     let server;
     let awsClientMock;
+    let reqMock;
     let configMock;
 
     before(() => {
@@ -31,11 +32,17 @@ describe('events plugin test', () => {
         };
 
         awsClientMock = sinon.stub().returns({
-            updateLastModified: sinon.stub().yields(null)
+            updateLastModified: sinon.stub().yields(null),
+            invalidateCache: sinon.stub().yields(null)
+        });
+
+        reqMock = sinon.stub().yields(null, {
+            statusCode: 403
         });
 
         mockery.registerMock('../helpers/aws', awsClientMock);
         mockery.registerMock('config', configMock);
+        mockery.registerMock('request', reqMock);
 
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/caches');
@@ -628,5 +635,65 @@ describe('events plugin test', () => {
                 });
             });
         }));
+    });
+
+    describe('DELETE /caches/:scope/:id', () => {
+        let getOptions;
+        let putOptions;
+        let deleteOptions;
+
+        beforeEach(() => {
+            getOptions = {
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    jobId: mockJobID,
+                    scope: ['build']
+                },
+                url: `/caches/jobs/${mockJobID}/foo`
+            };
+            putOptions = {
+                method: 'PUT',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    jobId: mockJobID,
+                    scope: ['build']
+                },
+                url: `/caches/jobs/${mockJobID}/foo`
+            };
+            deleteOptions = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    username: 'testuser',
+                    scope: ['user']
+                },
+                url: `/caches/jobs/${mockJobID}`
+            };
+        });
+
+        it('Throws error if user cannot invalidate cache', () =>
+            server.inject(putOptions).then((postResponse) => {
+                assert.equal(postResponse.statusCode, 202);
+
+                return server.inject(getOptions).then((getResponse) => {
+                    assert.equal(getResponse.statusCode, 200);
+
+                    return server.inject(deleteOptions).then((deleteResponse) => {
+                        assert.equal(deleteResponse.statusCode, 403);
+                    });
+                });
+            })
+        );
     });
 });

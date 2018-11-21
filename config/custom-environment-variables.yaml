@@ -65,3 +65,4 @@ strategy:
 
 ecosystem:
     ui: ECOSYSTEM_UI
+    api: ECOSYSTEM_API

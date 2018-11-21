@@ -4,6 +4,7 @@ const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
 const AwsClient = require('../helpers/aws');
+const req = require('request');
 
 const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).label('Scope Name');
 const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
@@ -329,6 +330,103 @@ exports.plugin = {
                         scope: SCHEMA_SCOPE_NAME,
                         id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
+                    }
+                }
+            }
+        }, {
+            method: 'DELETE',
+            path: '/caches/{scope}/{id}',
+            handler: async (request, h) => {
+                if (strategyConfig.plugin !== 's3') {
+                    return h.response();
+                }
+
+                let cachePath;
+                const apiUrl = config.get('ecosystem.api');
+                const opts = {
+                    url: `${apiUrl}/v4/isAdmin`,
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${request.auth.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    json: true
+                };
+
+                switch (request.params.scope) {
+                case 'events': {
+                    const eventIdParam = request.params.id;
+
+                    opts.qs = {
+                        eventId: eventIdParam
+                    };
+
+                    cachePath = `events/${eventIdParam}/`;
+                    break;
+                }
+                case 'jobs': {
+                    const jobIdParam = request.params.id;
+
+                    opts.qs = {
+                        jobId: jobIdParam
+                    };
+
+                    cachePath = `jobs/${jobIdParam}/`;
+                    break;
+                }
+                case 'pipelines': {
+                    const pipelineIdParam = request.params.id;
+
+                    opts.qs = {
+                        pipelineId: pipelineIdParam
+                    };
+
+                    cachePath = `pipelines/${pipelineIdParam}/`;
+                    break;
+                }
+                default:
+                    return boom.forbidden('Invalid scope');
+                }
+
+                try {
+                    await req(opts, (err, response) => {
+                        if (!err && response === true) {
+                            return awsClient.invalidateCache(cachePath, (e) => {
+                                if (e) {
+                                    console.log('Failed to invalidate cache: ', e);
+                                }
+
+                                return Promise.resolve();
+                            });
+                        } else if (!err) {
+                            return Promise.reject(new Error('User cannot invalidate cache.'));
+                        }
+
+                        return Promise.reject(err);
+                    });
+                } catch (err) {
+                    return boom.forbidden(err);
+                }
+
+                return h.response();
+            },
+            options: {
+                description: 'Invalidate cache folder',
+                notes: 'Delete entire cache folder for a job or pipeline',
+                tags: ['api', 'events', 'jobs', 'pipelines'],
+                auth: {
+                    strategies: ['token'],
+                    scope: ['user']
+                },
+                plugins: {
+                    'hapi-swagger': {
+                        security: [{ token: [] }]
+                    }
+                },
+                validate: {
+                    params: {
+                        scope: SCHEMA_SCOPE_NAME,
+                        id: SCHEMA_SCOPE_ID
                     }
                 }
             }
