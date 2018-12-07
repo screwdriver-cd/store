@@ -56,11 +56,11 @@ exports.plugin = {
                     break;
                 }
                 case 'jobs': {
-                    const { jobId } = request.auth.credentials;
+                    const { jobId, prParentJobId } = request.auth.credentials;
                     const jobIdParam = request.params.id;
 
-                    if (jobIdParam !== jobId) {
-                        return boom.forbidden(`Credential only valid for ${jobId}`);
+                    if (jobIdParam !== jobId && jobIdParam !== prParentJobId) {
+                        return boom.forbidden(`Credential is not valid for ${jobIdParam}`);
                     }
 
                     cacheName = request.params.cacheName;
