@@ -200,6 +200,41 @@ describe('events plugin test', () => {
             })
         ));
 
+        it('returns 200 if job is asking for parent cache', async () => {
+            const options = {
+                method: 'PUT',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                credentials: {
+                    jobId: mockJobID,
+                    scope: ['build']
+                }
+            };
+
+            options.url = `/caches/jobs/${mockJobID}/foo`;
+
+            options.headers['content-type'] = 'application/x-ndjson';
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/caches/jobs/${mockJobID}/foo`,
+                credentials: {
+                    jobId: 5555,
+                    prParentJobId: mockJobID,
+                    scope: ['build']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
+            });
+        });
+
         it('returns 403 if credentials is not valid', () => (
             server.inject({
                 headers: {
