@@ -45,11 +45,10 @@
     }
   },
   "devDependencies": {
-    "chai": "^3.5.0",
-    "chai-as-promised": "^6.0.0",
-    "eslint": "^4.3.0",
-    "eslint-config-screwdriver": "^3.0.0",
-    "jenkins-mocha": "^4.0.0",
+    "chai": "^4.2.0",
+    "eslint": "^4.19.1",
+    "eslint-config-screwdriver": "^3.0.1",
+    "jenkins-mocha": "^6.0.0",
     "js-yaml": "^3.6.1",
     "jsonwebtoken": "^8.4.0",
     "mockery": "^2.0.0",
