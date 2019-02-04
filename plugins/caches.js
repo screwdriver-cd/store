@@ -113,7 +113,8 @@ exports.plugin = {
                     // Update last modified timestamp to reset the lifecycle
                     await awsClient.updateLastModified(cacheKey, (e) => {
                         if (e) {
-                            console.log('Failed to update last modified timestamp: ', e);
+                            request.log([cacheName, 'error'],
+                                `Failed to update last modified timestamp: ${e}`);
                         }
                     });
                 } catch (err) {
@@ -306,10 +307,13 @@ exports.plugin = {
 
                 try {
                     await cache.drop(cacheKey);
+                    request.log([cacheKey, 'info'], 'Successfully deleted a cache');
 
                     return h.response();
                 } catch (err) {
-                    throw err;
+                    request.log([cacheKey, 'error'], `Failed to delete a cache: ${err}`);
+
+                    throw boom.serverUnavailable(err.message, err);
                 }
             },
             options: {
@@ -404,14 +408,18 @@ exports.plugin = {
                     }
 
                     return reject(err);
-                })).then(() => h.response().code(200))
-                    .catch((err) => {
-                        if (err === 'Permission denied') {
-                            return boom.forbidden(err);
-                        }
+                })).then(() => {
+                    request.log([cachePath, 'info'], 'Successfully deleted a cache');
 
-                        return h.response().code(500);
-                    });
+                    return h.response().code(200);
+                }).catch((err) => {
+                    if (err === 'Permission denied') {
+                        return boom.forbidden(err);
+                    }
+                    request.log([cachePath, 'error'], `Failed to delete a cache: ${err}`);
+
+                    return h.response().code(500);
+                });
             },
             options: {
                 description: 'Invalidate cache folder',
