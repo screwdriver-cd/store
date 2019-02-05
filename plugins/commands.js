@@ -142,7 +142,7 @@ exports.plugin = {
                     await cache.drop(id);
                     request.log([id, 'info'], 'Successfully deleted a command');
 
-                    return h.response().code(200);
+                    return h.response().code(204);
                 } catch (err) {
                     request.log([id, 'error'], `Failed to delete a command: ${err}`);
 

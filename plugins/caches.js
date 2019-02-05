@@ -309,7 +309,7 @@ exports.plugin = {
                     await cache.drop(cacheKey);
                     request.log([cacheKey, 'info'], 'Successfully deleted a cache');
 
-                    return h.response();
+                    return h.response().code(204);
                 } catch (err) {
                     request.log([cacheKey, 'error'], `Failed to delete a cache: ${err}`);
 
@@ -411,7 +411,7 @@ exports.plugin = {
                 })).then(() => {
                     request.log([cachePath, 'info'], 'Successfully deleted a cache');
 
-                    return h.response().code(200);
+                    return h.response().code(204);
                 }).catch((err) => {
                     if (err === 'Permission denied') {
                         return boom.forbidden(err);
