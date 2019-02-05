@@ -232,7 +232,7 @@ describe('commands plugin test', () => {
             assert.equal(getResponse.statusCode, 404);
 
             return server.inject(deleteOptions).then((deleteResponse) => {
-                assert.equal(deleteResponse.statusCode, 200);
+                assert.equal(deleteResponse.statusCode, 204);
             });
         }));
 
@@ -243,7 +243,7 @@ describe('commands plugin test', () => {
                 assert.equal(getResponse.statusCode, 200);
 
                 return server.inject(deleteOptions).then((deleteResponse) => {
-                    assert.equal(deleteResponse.statusCode, 200);
+                    assert.equal(deleteResponse.statusCode, 204);
 
                     return server.inject(getOptions).then((getResponse2) => {
                         assert.equal(getResponse2.statusCode, 404);
