@@ -1,4 +1,4 @@
-# Artifact Store
+# Artifact Store!
 [![Version][npm-image]][npm-url] [![Pulls][docker-pulls]][docker-url] [![Stars][docker-stars]][docker-url] [![Build Status][status-image]][status-url] [![Open Issues][issues-image]][issues-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Vulnerabilities][vul-image]][vul-url] ![License][license-image]
 
 > Pluggable Artifact Store (for logs, shared steps, templates, etc).
