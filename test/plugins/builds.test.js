@@ -192,7 +192,9 @@ describe('builds plugin test', () => {
             });
 
             assert.equal(downloadResponse.statusCode, 200);
-            assert.equal(downloadResponse.headers['content-disposition'], 'attachment');
+            assert.equal(
+                downloadResponse.headers['content-disposition'], 'attachment; filename="foo"'
+            );
         });
 
         it('saves an artifact without headers for text/plain type', async () => {
