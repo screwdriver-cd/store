@@ -5,6 +5,8 @@ const boom = require('boom');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
+const DOWNLOAD = joi.string().valid(['', 'false', 'true']).label('Flag to trigger download');
+const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
@@ -57,6 +59,12 @@ exports.plugin = {
                     response.headers['content-type'] = 'text/plain';
                 }
 
+                // only if the artifact is requested as downloadable item
+                if (request.query.download === 'true') {
+                    // let browser sniff for the correct filename w/ extension
+                    response.headers['content-disposition'] = 'attachment';
+                }
+
                 return response;
             },
             options: {
@@ -76,6 +84,10 @@ exports.plugin = {
                     params: {
                         id: SCHEMA_BUILD_ID,
                         artifact: SCHEMA_ARTIFACT_ID
+                    },
+                    query: {
+                        download: DOWNLOAD,
+                        token: TOKEN
                     }
                 }
             }

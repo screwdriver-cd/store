@@ -169,19 +169,30 @@ describe('builds plugin test', () => {
 
             assert.equal(putResponse.statusCode, 202);
 
-            return server.inject({
+            const getResponse = await server.inject({
                 url: `/builds/${mockBuildID}/foo`,
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']
                 }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['x-foo'], 'bar');
-                assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
-                assert.isNotOk(getResponse.headers.ignore);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
             });
+
+            assert.equal(getResponse.statusCode, 200);
+            assert.equal(getResponse.headers['x-foo'], 'bar');
+            assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
+            assert.isNotOk(getResponse.headers.ignore);
+            assert.equal(getResponse.result, 'THIS IS A TEST');
+
+            const downloadResponse = await server.inject({
+                url: `/builds/${mockBuildID}/foo?download=true`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            });
+
+            assert.equal(downloadResponse.statusCode, 200);
+            assert.equal(downloadResponse.headers['content-disposition'], 'attachment');
         });
 
         it('saves an artifact without headers for text/plain type', async () => {
