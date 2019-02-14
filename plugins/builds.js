@@ -62,7 +62,8 @@ exports.plugin = {
                 // only if the artifact is requested as downloadable item
                 if (request.query.download === 'true') {
                     // let browser sniff for the correct filename w/ extension
-                    response.headers['content-disposition'] = 'attachment';
+                    response.headers['content-disposition'] =
+                        `attachment; filename="${artifact.split('/').pop()}"`;
                 }
 
                 return response;
