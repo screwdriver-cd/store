@@ -390,7 +390,7 @@ exports.plugin = {
             method: 'DELETE',
             path: '/caches/{scope}/{id}',
             handler: (request, h) => {
-                if (strategyConfig.plugin !== 's3') {
+                if (!usingS3) {
                     return h.response();
                 }
 

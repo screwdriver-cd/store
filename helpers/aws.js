@@ -16,6 +16,7 @@ class AwsClient {
      * @param  {String}    config.region             the region to send service requests to
      * @param  {String}    config.forcePathStyle     whether to force path style URLs for S3 objects
      * @param  {String}    config.bucket             S3 bucket
+     * @param  {String}    config.segment            S3 segment
      */
     constructor(config) {
         const options = {
@@ -137,7 +138,7 @@ class AwsClient {
         const params = {
             Bucket: this.bucket,
             Key: this.getStoragePathForKey(cacheKey),
-            Expires: new Date(new Date().getTime()),
+            Expires: new Date(),
             ContentType: 'application/octet-stream',
             Body: passthrough
         };
@@ -149,8 +150,8 @@ class AwsClient {
 
     /**
      * Get download stream
-     * @method downloadStream
-     * *@param {Object}             config                Config object
+     * @method getDownloadStream
+     * @param {Object}             config                Config object
      * @param {String}              config.cacheKey       Path to cache
      * @param {Promise}                                   Resolve with a stream if request succeeds, reject with boom object
      */
