@@ -1,6 +1,9 @@
 'use strict';
 
 const AWS = require('aws-sdk');
+const stream = require('stream');
+const Boom = require('boom');
+const winston = require('winston');
 
 class AwsClient {
     /**
@@ -13,6 +16,7 @@ class AwsClient {
      * @param  {String}    config.region             the region to send service requests to
      * @param  {String}    config.forcePathStyle     whether to force path style URLs for S3 objects
      * @param  {String}    config.bucket             S3 bucket
+     * @param  {String}    config.segment            S3 segment
      */
     constructor(config) {
         const options = {
@@ -28,6 +32,7 @@ class AwsClient {
 
         this.client = new AWS.S3(options);
         this.bucket = config.bucket;
+        this.segment = config.segment;
     }
 
     /**
@@ -98,6 +103,89 @@ class AwsClient {
 
                 return callback();
             });
+        });
+    }
+
+    /**
+     * Parse cache key
+     * @method getStoragePathForKey
+     * @param {String}              cacheKey          Path of the cache
+     * @return {String}
+     */
+    getStoragePathForKey(cacheKey) {
+        const convert = str => str
+            // Remove leading/trailing slashes
+            .replace(/(^\/|\/$)/g, '')
+            // Replace special URL characters
+            .replace(/[?&#%]/g, '~');
+
+        const parsedKey = convert(cacheKey);
+
+        return `${this.segment}/${parsedKey}`;
+    }
+
+    /**
+     * upload data as stream
+     * @method uploadAsStream
+     * @param {Object}              config               Config object
+     * @param {Stream}              config.payload       Payload to upload
+     * @param {String}              config.cacheKey      Path to cache
+     * @return {Promise}
+     */
+    uploadAsStream({ payload, cacheKey }) {
+        // stream the data to s3
+        const passthrough = new stream.PassThrough();
+        const params = {
+            Bucket: this.bucket,
+            Key: this.getStoragePathForKey(cacheKey),
+            Expires: new Date(),
+            ContentType: 'application/octet-stream',
+            Body: passthrough
+        };
+
+        payload.pipe(passthrough);
+
+        return this.client.upload(params).promise();
+    }
+
+    /**
+     * Get download stream
+     * @method getDownloadStream
+     * @param {Object}             config                Config object
+     * @param {String}              config.cacheKey       Path to cache
+     * @param {Promise}                                   Resolve with a stream if request succeeds, reject with boom object
+     */
+    getDownloadStream({ cacheKey }) {
+        // get a download stream from s3
+        const params = {
+            Bucket: this.bucket,
+            Key: this.getStoragePathForKey(cacheKey)
+        };
+
+        return new Promise((resolve, reject) => {
+            const req = this.client.getObject(params);
+            let s3stream;
+
+            // check the header before returning a stream, if request failed, reject
+            req.on('httpHeaders', (statusCode) => {
+                if (statusCode >= 400) {
+                    winston.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
+
+                    return reject(new Boom('Fetch cache request failed', { statusCode }));
+                }
+
+                return resolve(s3stream);
+            });
+
+            s3stream = req.createReadStream()
+                .on('error', (error) => {
+                    winston.error(`Error streaming ${cacheKey}: ${error}`);
+                })
+                .on('data', (chunk) => {
+                    winston.info(`Received ${chunk.length} bytes of data for ${cacheKey}`);
+                });
+
+            return s3stream;
         });
     }
 }

@@ -4,6 +4,9 @@ const { assert } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const crypto = require('crypto');
+const stream = require('stream');
+const EventEmitter = require('events').EventEmitter;
+const util = require('util');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -16,10 +19,15 @@ describe('aws helper test', () => {
     const testBucket = 'TEST_REGION';
     const localCache = 'THIS IS A TEST';
     const testMD5 = crypto.createHash('md5').update(localCache).digest('hex');
+    const TestStream = class extends stream.Readable {
+        _read() {}
+    };
     let sdkMock;
     let AwsClient;
     let clientMock;
     let awsClient;
+    let AwsRequestMock;
+    let testAwsRequest;
 
     before(() => {
         mockery.enable({
@@ -30,6 +38,10 @@ describe('aws helper test', () => {
 
     beforeEach(() => {
         clientMock = sinon.stub();
+        AwsRequestMock = sinon.stub();
+        AwsRequestMock.prototype.createReadStream = () => new TestStream();
+        util.inherits(AwsRequestMock, EventEmitter);
+        testAwsRequest = new AwsRequestMock();
         clientMock.prototype.headObject = sinon.stub().yieldsAsync(null, {
             StorageClass: 'STANDARD',
             Metadata: {
@@ -37,6 +49,10 @@ describe('aws helper test', () => {
             }
         });
         clientMock.prototype.copyObject = sinon.stub().yieldsAsync(null);
+        clientMock.prototype.getObject = sinon.stub().returns(testAwsRequest);
+        clientMock.prototype.upload = sinon.stub().returns({
+            promise: sinon.stub().resolves(null)
+        });
 
         sdkMock = {
             S3: clientMock
@@ -51,7 +67,8 @@ describe('aws helper test', () => {
             secretAccessKey,
             region,
             s3ForcePathStyle,
-            bucket: testBucket
+            bucket: testBucket,
+            segment: 'caches'
         });
     });
 
@@ -126,5 +143,54 @@ describe('aws helper test', () => {
             assert.deepEqual(e, err);
             done();
         });
+    });
+
+    it('uploads data as stream', () => {
+        const uploadParam = {
+            Bucket: testBucket,
+            Key: `caches/${cacheKey}`
+        };
+
+        return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() })
+            .then(() => {
+                assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam));
+            });
+    });
+
+    it('resolves a download stream', () => {
+        const getParam = {
+            Bucket: testBucket,
+            Key: `caches/${cacheKey}`
+        };
+
+        // emit the event after the function is called
+        setTimeout(() => {
+            testAwsRequest.emit('httpHeaders', 200);
+        }, 0);
+
+        return awsClient.getDownloadStream({ cacheKey })
+            .then((data) => {
+                assert.calledWith(clientMock.prototype.getObject, getParam);
+                assert.isTrue(data instanceof TestStream);
+            });
+    });
+
+    it('rejects with a boom object if getObject request failed', () => {
+        const getParam = {
+            Bucket: testBucket,
+            Key: `caches/${cacheKey}`
+        };
+
+        // emit the event after the function is called
+        setTimeout(() => {
+            testAwsRequest.emit('httpHeaders', 404);
+        }, 0);
+
+        return awsClient.getDownloadStream({ cacheKey })
+            .catch((err) => {
+                assert.calledWith(clientMock.prototype.getObject, getParam);
+                assert.deepEqual(err.isBoom, true);
+                assert.deepEqual(err.output.statusCode, 404);
+            });
     });
 });

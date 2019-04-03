@@ -10,6 +10,22 @@ const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).la
 const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
 
+/**
+ * Convert stream to buffer
+ * @method streamToBuffer
+ * @param  {Stream}       stream
+ * @return {Buffer}
+ */
+function streamToBuffer(stream) {
+    return new Promise((resolve, reject) => {
+        const buffers = [];
+
+        stream.on('error', reject);
+        stream.on('data', data => buffers.push(data));
+        stream.on('end', () => resolve(Buffer.concat(buffers)));
+    });
+}
+
 exports.plugin = {
     name: 'caches',
 
@@ -22,15 +38,17 @@ exports.plugin = {
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
     register(server, options) {
+        const segment = 'caches';
         const cache = server.cache({
-            segment: 'caches',
+            segment,
             expiresIn: parseInt(options.expiresInSec, 10)
         });
-
         const strategyConfig = config.get('strategy');
+        const usingS3 = strategyConfig.plugin === 's3';
         let awsClient;
 
-        if (strategyConfig.plugin === 's3') {
+        if (usingS3) {
+            strategyConfig.s3.segment = segment;
             awsClient = new AwsClient(strategyConfig.s3);
         }
 
@@ -84,28 +102,40 @@ exports.plugin = {
                 }
 
                 let value;
-
-                try {
-                    value = await cache.get(cacheKey);
-                } catch (err) {
-                    throw err;
-                }
-
-                if (!value) {
-                    throw boom.notFound();
-                }
-
                 let response;
 
-                if (value.c) {
-                    response = h.response(Buffer.from(value.c.data));
-                    response.headers = value.h;
+                // for old json files, the value is hidden in an object, we cannot stream it directly
+                if (usingS3 && cacheName.endsWith('zip')) {
+                    try {
+                        value = await awsClient.getDownloadStream({ cacheKey });
+                        response = h.response(value);
+                        response.headers['content-type'] = 'application/octet-stream';
+                    } catch (err) {
+                        request.log([cacheName, 'error'], `Failed to stream the cache: ${err}`);
+                        throw err;
+                    }
                 } else {
-                    response = h.response(Buffer.from(value));
-                    response.headers['content-type'] = 'text/plain';
+                    try {
+                        value = await cache.get(cacheKey);
+                    } catch (err) {
+                        request.log([cacheName, 'error'], `Failed to get the cache: ${err}`);
+                        throw err;
+                    }
+
+                    if (!value) {
+                        throw boom.notFound();
+                    }
+
+                    if (value.c) {
+                        response = h.response(Buffer.from(value.c.data));
+                        response.headers = value.h;
+                    } else {
+                        response = h.response(Buffer.from(value));
+                        response.headers['content-type'] = 'text/plain';
+                    }
                 }
 
-                if (strategyConfig.plugin !== 's3') {
+                if (!usingS3) {
                     return response;
                 }
 
@@ -198,12 +228,11 @@ exports.plugin = {
                     return boom.forbidden('Invalid scope');
                 }
 
+                const payload = request.payload;
                 const contents = {
-                    c: request.payload,
+                    c: {},
                     h: {}
                 };
-                const size = Buffer.byteLength(request.payload);
-                let value = contents;
 
                 // Store all x-* and content-type headers
                 Object.keys(request.headers).forEach((header) => {
@@ -212,22 +241,41 @@ exports.plugin = {
                     }
                 });
 
-                // For text/plain, upload it as Buffer
-                // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
-                // and might create issue on large payload
-                if (contents.h['content-type'] === 'text/plain') {
-                    value = contents.c;
-                }
-
-                request.log(logId, `Saving ${cacheName} of size ${size} bytes with `
+                request.log(logId, `Saving ${cacheName} with `
                     + `headers ${JSON.stringify(contents.h)}`);
 
-                try {
-                    await cache.set(cacheKey, value, 0);
-                } catch (err) {
-                    request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
+                // stream large payload if using s3
+                if (usingS3 && contents.h['content-type'] === 'text/plain') {
+                    try {
+                        await awsClient.uploadAsStream({
+                            payload,
+                            cacheKey
+                        });
+                    } catch (err) {
+                        request.log([cacheName, 'error'], `Failed to stream the cache: ${err}`);
 
-                    throw boom.serverUnavailable(err.message, err);
+                        throw boom.serverUnavailable(err.message, err);
+                    }
+                } else {
+                    try {
+                        let value = contents;
+
+                        // convert stream to buffer, otherwise catbox cannot parse
+                        contents.c = await streamToBuffer(payload);
+
+                        // For text/plain, upload it as Buffer
+                        // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
+                        // and might create issue on large payload
+                        if (contents.h['content-type'] === 'text/plain') {
+                            value = contents.c;
+                        }
+
+                        await cache.set(cacheKey, value, 0);
+                    } catch (err) {
+                        request.log([cacheName, 'error'], `Failed to store in cache: ${err}`);
+
+                        throw boom.serverUnavailable(err.message, err);
+                    }
                 }
 
                 return h.response().code(202);
@@ -238,7 +286,8 @@ exports.plugin = {
                 tags: ['api', 'events', 'jobs', 'pipelines'],
                 payload: {
                     maxBytes: parseInt(options.maxByteSize, 10),
-                    parse: false
+                    parse: false,
+                    output: 'stream'
                 },
                 auth: {
                     strategies: ['token'],
@@ -341,7 +390,7 @@ exports.plugin = {
             method: 'DELETE',
             path: '/caches/{scope}/{id}',
             handler: (request, h) => {
-                if (strategyConfig.plugin !== 's3') {
+                if (!usingS3) {
                     return h.response();
                 }
 
