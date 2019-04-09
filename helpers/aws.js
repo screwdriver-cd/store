@@ -180,9 +180,6 @@ class AwsClient {
             s3stream = req.createReadStream()
                 .on('error', (error) => {
                     winston.error(`Error streaming ${cacheKey}: ${error}`);
-                })
-                .on('data', (chunk) => {
-                    winston.info(`Received ${chunk.length} bytes of data for ${cacheKey}`);
                 });
 
             return s3stream;
