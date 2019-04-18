@@ -756,7 +756,7 @@ describe('caches plugin test using s3', () => {
     });
 
     describe('GET /caches/events/:id/:cacheName', () => {
-        it('returns 200 if not found', () => (
+        it('returns 200', () => (
             server.inject({
                 headers: {
                     'x-foo': 'bar'
@@ -816,7 +816,7 @@ describe('caches plugin test using s3', () => {
             };
         });
 
-        it('streams a cache without headers for text/plain type', async () => {
+        it('streams .zip cache without headers', async () => {
             options.url = `/caches/events/${mockEventID}/foo.zip`;
 
             const putResponse = await server.inject(options);
