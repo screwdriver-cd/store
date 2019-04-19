@@ -2,6 +2,9 @@
 
 const joi = require('joi');
 const boom = require('boom');
+const config = require('config');
+const AwsClient = require('../helpers/aws');
+const { streamToBuffer } = require('../helpers/helper');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -22,10 +25,20 @@ exports.plugin = {
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
     register(server, options) {
+        const segment = 'builds';
         const cache = server.cache({
-            segment: 'builds',
+            segment,
             expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
         });
+
+        const strategyConfig = config.get('strategy');
+        const usingS3 = strategyConfig.plugin === 's3';
+        let awsClient;
+
+        if (usingS3) {
+            strategyConfig.s3.segment = segment;
+            awsClient = new AwsClient(strategyConfig.s3);
+        }
 
         server.expose('stats', cache.stats);
 
@@ -38,25 +51,36 @@ exports.plugin = {
                 const id = `${buildId}-${artifact}`;
 
                 let value;
-
-                try {
-                    value = await cache.get(id);
-                } catch (err) {
-                    throw err;
-                }
-
-                if (!value) {
-                    throw boom.notFound();
-                }
-
                 let response;
 
-                if (value.c) {
-                    response = h.response(Buffer.from(value.c.data));
-                    response.headers = value.h;
+                // for old json files, the value is hidden in an object, we cannot stream it directly
+                if (usingS3 && id.endsWith('.zip')) {
+                    try {
+                        value = await awsClient.getDownloadStream({ cacheKey: id });
+                        response = h.response(value);
+                        response.headers['content-type'] = 'application/octet-stream';
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to stream the cache: ${err}`);
+                        throw err;
+                    }
                 } else {
-                    response = h.response(Buffer.from(value));
-                    response.headers['content-type'] = 'text/plain';
+                    try {
+                        value = await cache.get(id);
+                    } catch (err) {
+                        throw err;
+                    }
+
+                    if (!value) {
+                        throw boom.notFound();
+                    }
+
+                    if (value.c) {
+                        response = h.response(Buffer.from(value.c.data));
+                        response.headers = value.h;
+                    } else {
+                        response = h.response(Buffer.from(value));
+                        response.headers['content-type'] = 'text/plain';
+                    }
                 }
 
                 // only if the artifact is requested as downloadable item
@@ -100,12 +124,11 @@ exports.plugin = {
                 const buildId = request.params.id;
                 const artifact = request.params.artifact;
                 const id = `${buildId}-${artifact}`;
+                const payload = request.payload;
                 const contents = {
-                    c: request.payload,
+                    c: payload,
                     h: {}
                 };
-                const size = Buffer.byteLength(request.payload);
-                let value = contents;
 
                 if (username !== buildId) {
                     return boom.forbidden(`Credential only valid for ${username}`);
@@ -118,22 +141,41 @@ exports.plugin = {
                     }
                 });
 
-                // For text/plain payload, upload it as Buffer
-                // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
-                // and might create issue on large payload
-                if (contents.h['content-type'] === 'text/plain') {
-                    value = contents.c;
-                }
+                // stream large payload if using s3
+                if (usingS3 && id.endsWith('.zip')) {
+                    try {
+                        await awsClient.uploadAsStream({
+                            payload,
+                            id
+                        });
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
 
-                request.log(buildId, `Saving ${artifact} of size ${size} bytes with `
-                    + `headers ${JSON.stringify(contents.h)}`);
+                        throw boom.serverUnavailable(err.message, err);
+                    }
+                } else {
+                    let value = contents;
 
-                try {
-                    await cache.set(id, value, 0);
-                } catch (err) {
-                    request.log([id, 'error'], `Failed to store in cache: ${err}`);
+                    // convert stream to buffer, otherwise catbox cannot parse
+                    contents.c = await streamToBuffer(payload);
 
-                    throw boom.serverUnavailable(err.message, err);
+                    // For text/plain payload, upload it as Buffer
+                    // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
+                    // and might create issue on large payload
+                    if (contents.h['content-type'] === 'text/plain') {
+                        value = contents.c;
+                    }
+
+                    request.log(buildId, `Saving ${artifact} with `
+                        + `headers ${JSON.stringify(contents.h)}`);
+
+                    try {
+                        await cache.set(id, value, 0);
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
+
+                        throw boom.serverUnavailable(err.message, err);
+                    }
                 }
 
                 return h.response().code(202);
@@ -144,7 +186,8 @@ exports.plugin = {
                 tags: ['api', 'builds'],
                 payload: {
                     maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
-                    parse: false
+                    parse: false,
+                    output: 'stream'
                 },
                 auth: {
                     strategies: ['token'],

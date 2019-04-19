@@ -4,27 +4,12 @@ const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
 const AwsClient = require('../helpers/aws');
+const { streamToBuffer } = require('../helpers/helper');
 const req = require('request');
 
 const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).label('Scope Name');
 const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
-
-/**
- * Convert stream to buffer
- * @method streamToBuffer
- * @param  {Stream}       stream
- * @return {Buffer}
- */
-function streamToBuffer(stream) {
-    return new Promise((resolve, reject) => {
-        const buffers = [];
-
-        stream.on('error', reject);
-        stream.on('data', data => buffers.push(data));
-        stream.on('end', () => resolve(Buffer.concat(buffers)));
-    });
-}
 
 exports.plugin = {
     name: 'caches',
@@ -105,7 +90,7 @@ exports.plugin = {
                 let response;
 
                 // for old json files, the value is hidden in an object, we cannot stream it directly
-                if (usingS3 && cacheName.endsWith('zip')) {
+                if (usingS3 && cacheName.endsWith('.zip')) {
                     try {
                         value = await awsClient.getDownloadStream({ cacheKey });
                         response = h.response(value);
@@ -244,8 +229,8 @@ exports.plugin = {
                 request.log(logId, `Saving ${cacheName} with `
                     + `headers ${JSON.stringify(contents.h)}`);
 
-                // stream large payload if using s3
-                if (usingS3 && contents.h['content-type'] === 'text/plain') {
+                // stream large payload if using s3; cache files are always compressed to zip
+                if (usingS3 && cacheName.endsWith('.zip')) {
                     try {
                         await awsClient.uploadAsStream({
                             payload,

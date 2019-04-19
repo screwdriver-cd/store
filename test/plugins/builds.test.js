@@ -5,11 +5,13 @@ const sinon = require('sinon');
 const Hapi = require('hapi');
 const mockery = require('mockery');
 const catmemory = require('catbox-memory');
+const Boom = require('boom');
+
+const mockBuildID = 1899999;
 
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('builds plugin test', () => {
-    const mockBuildID = 1899999;
     let plugin;
     let server;
 
@@ -240,3 +242,174 @@ describe('builds plugin test', () => {
         });
     });
 });
+
+describe('builds plugin test using s3', () => {
+    let plugin;
+    let server;
+    let awsClientMock;
+    let reqMock;
+    let configMock;
+    let getDownloadStreamMock;
+    let uploadAsStreamMock;
+
+    before(() => {
+        mockery.enable({
+            useCleanCache: true,
+            warnOnUnregistered: false
+        });
+    });
+
+    beforeEach(() => {
+        configMock = {
+            get: sinon.stub().returns({
+                plugin: 's3',
+                s3: {}
+            })
+        };
+
+        getDownloadStreamMock = sinon.stub().resolves(null);
+        uploadAsStreamMock = sinon.stub().resolves(null);
+
+        awsClientMock = sinon.stub().returns({
+            updateLastModified: sinon.stub().yields(null),
+            invalidateCache: sinon.stub().yields(null),
+            getDownloadStream: getDownloadStreamMock,
+            uploadAsStream: uploadAsStreamMock
+        });
+
+        reqMock = sinon.stub();
+
+        reqMock.yieldsAsync({
+            statusCode: 403
+        });
+
+        mockery.registerMock('../helpers/aws', awsClientMock);
+        mockery.registerMock('config', configMock);
+        mockery.registerMock('request', reqMock);
+
+        // eslint-disable-next-line global-require
+        plugin = require('../../plugins/builds');
+
+        server = Hapi.server({
+            cache: {
+                engine: catmemory,
+                maxByteSize: 512,
+                allowMixedContent: true
+            },
+            port: 1234
+        });
+
+        server.auth.scheme('custom', () => ({
+            authenticate: (request, h) => h.authenticated()
+        }));
+        server.auth.strategy('token', 'custom');
+        server.auth.strategy('session', 'custom');
+
+        return server.register({ plugin })
+            .then(() => server.start());
+    });
+
+    afterEach(async () => {
+        await server.stop();
+        server = null;
+        mockery.deregisterAll();
+        mockery.resetCache();
+    });
+
+    after(() => {
+        mockery.disable();
+    });
+
+    it('registers the plugin', () => {
+        assert.isOk(server.registrations.builds);
+    });
+
+    describe('GET /builds/:id/:artifact', () => {
+        it('returns 200', () => (
+            server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                },
+                url: `/builds/${mockBuildID}/foo.zip`
+            }).then((response) => {
+                assert.calledWith(getDownloadStreamMock, {
+                    cacheKey: `${mockBuildID}-foo.zip`
+                });
+                assert.equal(response.statusCode, 200);
+            })
+        ));
+
+        it('returns 404 if not found', () => {
+            getDownloadStreamMock.rejects(new Boom('Not found', {
+                statusCode: 404
+            }));
+
+            return server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                },
+                url: `/builds/${mockBuildID}/foo.zip`
+            }).then((response) => {
+                assert.calledWith(getDownloadStreamMock, {
+                    cacheKey: `${mockBuildID}-foo.zip`
+                });
+                assert.equal(response.statusCode, 404);
+            });
+        });
+    });
+
+    describe('PUT /builds/:id/:artifact', () => {
+        let options;
+
+        beforeEach(() => {
+            options = {
+                method: 'PUT',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    ignore: 'true'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['build']
+                },
+                url: `/builds/${mockBuildID}/foo.zip`
+            };
+        });
+
+        it('streams .zip artifact without headers', async () => {
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: options.url,
+                credentials: {
+                    scope: ['user']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
+                assert.isNotOk(getResponse.headers['x-foo']);
+                assert.isNotOk(getResponse.headers.ignore);
+            });
+        });
+
+        it('returns 503 if streaming failed', async () => {
+            uploadAsStreamMock.rejects(new Error('failed'));
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 503);
+        });
+    });
+});
+
