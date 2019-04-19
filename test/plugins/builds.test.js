@@ -389,6 +389,9 @@ describe('builds plugin test using s3', () => {
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
+            assert.calledWith(getDownloadStreamMock, sinon.match({
+                cacheKey: `${mockBuildID}-foo.zip`
+            });
 
             return server.inject({
                 url: options.url,
@@ -409,6 +412,9 @@ describe('builds plugin test using s3', () => {
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 503);
+            assert.calledWith(getDownloadStreamMock, sinon.match({
+                cacheKey: `${mockBuildID}-foo.zip`
+            });
         });
     });
 });
