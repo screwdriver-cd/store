@@ -391,7 +391,7 @@ describe('builds plugin test using s3', () => {
             assert.equal(putResponse.statusCode, 202);
             assert.calledWith(uploadAsStreamMock, sinon.match({
                 cacheKey: `${mockBuildID}-foo.zip`
-            });
+            }));
 
             return server.inject({
                 url: options.url,
@@ -414,7 +414,7 @@ describe('builds plugin test using s3', () => {
             assert.equal(putResponse.statusCode, 503);
             assert.calledWith(uploadAsStreamMock, sinon.match({
                 cacheKey: `${mockBuildID}-foo.zip`
-            });
+            }));
         });
     });
 });

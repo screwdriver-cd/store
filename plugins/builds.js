@@ -146,7 +146,7 @@ exports.plugin = {
                     try {
                         await awsClient.uploadAsStream({
                             payload,
-                            cachekey: id
+                            cacheKey: id
                         });
                     } catch (err) {
                         request.log([id, 'error'], `Failed to store in cache: ${err}`);
