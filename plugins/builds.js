@@ -142,7 +142,7 @@ exports.plugin = {
                 });
 
                 // stream large payload if using s3
-                if (usingS3 && id.endsWith('.zip')) {
+                if (usingS3) {
                     try {
                         await awsClient.uploadAsStream({
                             payload,
