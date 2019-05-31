@@ -221,6 +221,28 @@ describe('builds plugin test', () => {
             });
         });
 
+        it('saves an html artifact without headers for text/html type', async () => {
+            options.url = `/builds/${mockBuildID}/foo.html`;
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            return server.inject({
+                url: `/builds/${mockBuildID}/foo.html`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
+                assert.isNotOk(getResponse.headers['x-foo']);
+                assert.isNotOk(getResponse.headers.ignore);
+                assert.equal(getResponse.result, 'THIS IS A TEST');
+            });
+        });
+
         it('saves an artifact and fetches it with pipeline scoped jwt', async () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
