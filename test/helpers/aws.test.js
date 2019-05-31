@@ -18,6 +18,7 @@ describe('aws helper test', () => {
     const cacheKey = 'test';
     const testBucket = 'TEST_REGION';
     const localCache = 'THIS IS A TEST';
+    const partSize = 10 * 1024 * 1024;
     const testMD5 = crypto.createHash('md5').update(localCache).digest('hex');
     const TestStream = class extends stream.Readable {
         _read() {}
@@ -68,7 +69,8 @@ describe('aws helper test', () => {
             region,
             s3ForcePathStyle,
             bucket: testBucket,
-            segment: 'caches'
+            segment: 'caches',
+            partSize
         });
     });
 
@@ -150,10 +152,15 @@ describe('aws helper test', () => {
             Bucket: testBucket,
             Key: `caches/${cacheKey}`
         };
+        const uploadOption = {
+            partSize
+        };
 
         return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() })
             .then(() => {
-                assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam));
+                assert.calledWith(clientMock.prototype.upload,
+                    sinon.match(uploadParam),
+                    sinon.match(uploadOption));
             });
     });
 

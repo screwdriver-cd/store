@@ -62,6 +62,8 @@ strategy:
         signatureVersion: S3_SIG_VER
         # Whether to force path style URLs for S3 objects.
         forcePathStyle: S3_FORCE_PATH_STYLE
+        # aws-sdk options for the size in bytes for each individual part to be uploaded.
+        partSize: S3_PART_SIZE
 
 ecosystem:
     ui: ECOSYSTEM_UI

@@ -17,6 +17,7 @@ class AwsClient {
      * @param  {String}    config.forcePathStyle     whether to force path style URLs for S3 objects
      * @param  {String}    config.bucket             S3 bucket
      * @param  {String}    config.segment            S3 segment
+     * @param  {Integer}   config.partSize           aws-sdk upload option
      */
     constructor(config) {
         const options = {
@@ -33,6 +34,7 @@ class AwsClient {
         this.client = new AWS.S3(options);
         this.bucket = config.bucket;
         this.segment = config.segment;
+        this.partSize = config.partSize;
     }
 
     /**
@@ -142,10 +144,13 @@ class AwsClient {
             ContentType: 'application/octet-stream',
             Body: passthrough
         };
+        const options = {
+            partSize: this.partSize
+        };
 
         payload.pipe(passthrough);
 
-        return this.client.upload(params).promise();
+        return this.client.upload(params, options).promise();
     }
 
     /**
