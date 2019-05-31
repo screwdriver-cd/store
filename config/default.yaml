@@ -70,6 +70,8 @@ strategy:
         bucket: YOUR-BUCKET-ID
         # Whether to force path style URLs for S3 objects.
         forcePathStyle: false
+        # aws-sdk options for the size in bytes for each individual part to be uploaded.
+        partSize: 5242880 # default 5mb
 
 ecosystem:
     ui: https://cd.screwdriver.cd
