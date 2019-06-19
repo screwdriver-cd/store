@@ -76,3 +76,4 @@ strategy:
 ecosystem:
     ui: https://cd.screwdriver.cd
     api: https://api.screwdriver.cd
+    allowCors: []

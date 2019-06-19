@@ -8,7 +8,8 @@ describe('server case', function () {
     this.timeout(5000);
 
     const ecosystem = {
-        ui: 'http://example.com'
+        ui: 'http://example.com',
+        allowCors: []
     };
 
     let hapiEngine;
