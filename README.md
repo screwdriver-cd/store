@@ -56,6 +56,17 @@ $ export STRATEGY=memory
 $ export PORT=8080
 ```
 
+Or if you want to use [`disk`](https://github.com/mirusresearch/catbox-disk) strategy as to persist cache, you can config as following, please be sure to create `./store-data` as a local directory though
+
+```
+strategy:
+    plugin: disk
+    disk:
+        cachePath: './store-data'
+        cleanEvery: 3600000
+        partition : 'cache'
+```
+
 All the possible environment variables are [defined here](config/custom-environment-variables.yaml).
 
 ## Storage Strategies
