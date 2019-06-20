@@ -81,6 +81,10 @@ exports.plugin = {
                         response = h.response(Buffer.from(value));
                         response.headers['content-type'] = 'text/plain';
                     }
+
+                    if (id.endsWith('.html')) {
+                        response.headers['content-type'] = 'text/html';
+                    }
                 }
 
                 // only if the artifact is requested as downloadable item
