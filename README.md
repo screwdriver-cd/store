@@ -56,6 +56,12 @@ $ export STRATEGY=memory
 $ export PORT=8080
 ```
 
+All the possible environment variables are [defined here](config/custom-environment-variables.yaml).
+
+## Storage Strategies
+
+Right now we're using [catbox](https://github.com/hapijs/catbox) for storage, so we can support any of their plugins (Redis, S3, Memcached, etc.).  We only installed the [memory](https://github.com/hapijs/catbox-memory) and [S3](https://github.com/fhemberger/catbox-s3) ones for now.
+
 Or if you want to use [`disk`](https://github.com/mirusresearch/catbox-disk) strategy as to persist cache, you can config as following, please be sure to create `./store-data` as a local directory though
 
 ```
@@ -66,12 +72,6 @@ strategy:
         cleanEvery: 3600000
         partition : 'cache'
 ```
-
-All the possible environment variables are [defined here](config/custom-environment-variables.yaml).
-
-## Storage Strategies
-
-Right now we're using [catbox](https://github.com/hapijs/catbox) for storage, so we can support any of their plugins (Redis, S3, Memcached, etc.).  We only installed the [memory](https://github.com/hapijs/catbox-memory) and [S3](https://github.com/fhemberger/catbox-s3) ones for now.
 
 ## Testing
 
