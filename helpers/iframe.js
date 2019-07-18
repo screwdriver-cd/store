@@ -1,14 +1,15 @@
 'use strict';
 
+const config = require('config');
+const uiUrl = config.get('ecosystem.ui');
+
 const iframeScript = `
-    function replaceHref(apiHref='http://localhost:9001/v4/builds/11/') {
+    function replaceHref(apiHref) {
         const currentIframeHref = new URL(document.location.href);
         const urlOrigin = currentIframeHref.origin;
         const urlFilePath = decodeURIComponent(currentIframeHref.pathname);
 
         let urlFileDir = urlFilePath.split('/');
-        // urlFileDir.pop(); // remove last file name
-        // urlFileDir = urlFileDir.join('/');
         urlFileDir = urlFileDir.slice(2, urlFileDir.length-1).join('/');
 
         const apiUrl = new URL(apiHref);
@@ -17,15 +18,10 @@ const iframeScript = `
 
         const anchors = document.getElementsByTagName('a');
         for (let anchor of anchors) {
-          // let originalHref = anchor.href;
           let originalHref = anchor.attributes.href.value;
-          console.log('anchor.href before', anchor.href);
-          // anchor.href = urlOrigin + urlFileDir + '/' + originalHref;
           const newUrl = apiUrlOrigin + '/' + apiVersion + '/' + urlFileDir + '/' + originalHref;
           anchor.href = newUrl.replace('ARTIFACTS', 'artifacts') + '?type=preview';
-          console.log('anchor.href after', anchor.href);
-
-          anchor.addEventListener('click',function(e) {
+          anchor.addEventListener('click', function(e) {
               top.postMessage({
                   message: 'reroute',
                   href: anchor.href
@@ -35,33 +31,21 @@ const iframeScript = `
         }
     }
 
-    function displayMessage(e) {
-        console.log('displayMessage e', e);
+    function replaceHrefLinks(e) {
         var message;
-        if (e.origin !== "http://localhost:4200") {
-            message = "You are not worthy";
-        } else {
-            // message = "I got " + e.data + " from " + e.origin;
+        if (e.origin !== "${uiUrl}") {
             const { cookie, headers, state } = e.data;
             if (state === 'ready') {
-                document.cookie = cookie;
-                debugger;
                 replaceHref();
             }
         }
-
-
-        // top.postMessage({message: 'events iframe loaded'}, '*');
-        // console.log('message', message);
     }
 
     if (window.addEventListener) {
-        console.log('addEventListener added');
         // For standards-compliant web browsers
-        window.addEventListener("message", displayMessage, false);
+        window.addEventListener("message", replaceHrefLinks, false);
     } else {
-        console.log('addEventListener onmessage added');
-        window.attachEvent("onmessage", displayMessage);
+        window.attachEvent("onmessage", replaceHrefLinks);
     }
 
     top.postMessage({

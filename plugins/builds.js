@@ -7,7 +7,7 @@ const fileType = require('file-type');
 const cheerio = require('cheerio');
 
 const AwsClient = require('../helpers/aws');
-const iframeScript = require('../helpers/iframe');
+const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
