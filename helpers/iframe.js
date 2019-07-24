@@ -2,9 +2,11 @@
 
 const config = require('config');
 const uiUrl = config.get('ecosystem.ui');
+const apiUrl = config.get('ecosystem.api');
+const apiVersion = 'v4';
 
 const iframeScript = `
-    function replaceHref(apiHref) {
+    function replaceHref(apiHref='${apiUrl}') {
         const currentIframeHref = new URL(document.location.href);
         const urlOrigin = currentIframeHref.origin;
         const urlFilePath = decodeURIComponent(currentIframeHref.pathname);
@@ -14,7 +16,7 @@ const iframeScript = `
 
         const apiUrl = new URL(apiHref);
         const apiUrlOrigin = apiUrl.origin;
-        const apiVersion = apiUrl.pathname.split('/')[1];
+        const apiVersion = apiUrl.pathname.split('/')[1] || '${apiVersion}';
 
         const anchors = document.getElementsByTagName('a');
         for (let anchor of anchors) {
@@ -22,19 +24,15 @@ const iframeScript = `
           const newUrl = apiUrlOrigin + '/' + apiVersion + '/' + urlFileDir + '/' + originalHref;
           anchor.href = newUrl.replace('ARTIFACTS', 'artifacts') + '?type=preview';
           anchor.addEventListener('click', function(e) {
-              top.postMessage({
-                  message: 'reroute',
-                  href: anchor.href
-              }, '*');
+              top.postMessage({ state: 'redirect', href: anchor.href }, '*');
               e.preventDefault();
           });
         }
     }
 
-    function replaceHrefLinks(e) {
-        var message;
-        if (e.origin !== "${uiUrl}") {
-            const { cookie, headers, state } = e.data;
+    function replaceLinksMessage(e) {
+        if ('${uiUrl}' === e.origin) {
+            const { state } = e.data;
             if (state === 'ready') {
                 replaceHref();
             }
@@ -43,15 +41,11 @@ const iframeScript = `
 
     if (window.addEventListener) {
         // For standards-compliant web browsers
-        window.addEventListener("message", replaceHrefLinks, false);
+        window.addEventListener("message", replaceLinksMessage, false);
     } else {
-        window.attachEvent("onmessage", replaceHrefLinks);
+        window.attachEvent("onmessage", replaceLinksMessage);
     }
-
-    top.postMessage({
-        message: 'iframe loaded',
-        state: 'loaded'
-    }, '*');`;
+    top.postMessage({ state: 'loaded' }, '*');`;
 
 module.exports = {
     iframeScript
