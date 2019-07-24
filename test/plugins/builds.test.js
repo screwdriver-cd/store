@@ -186,7 +186,7 @@ describe('builds plugin test', () => {
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
             const downloadResponse = await server.inject({
-                url: `/builds/${mockBuildID}/foo?download=true`,
+                url: `/builds/${mockBuildID}/foo?type=download`,
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']

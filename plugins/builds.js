@@ -12,8 +12,8 @@ const { streamToBuffer } = require('../helpers/helper');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
-const TYPE = joi.string()
-    .valid(['', 'download', 'preview'])
+const TYPE = joi.string().optional()
+    .valid(['download', 'preview'])
     .label('Flag to trigger type either to download or preview');
 const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
@@ -112,15 +112,17 @@ exports.plugin = {
                         response = h.response(Buffer.from(value));
                         response.headers['content-type'] = 'text/plain';
                     }
+
+                    if (id.endsWith('.html')) {
+                        response.headers['content-type'] = 'text/html';
+                    }
                 }
 
                 const fileName = artifact.split('/').pop();
                 const fileExt = fileName.split('.').pop();
                 let mime = getMimeFromFileExtension(fileExt);
 
-                if (value.h) {
-                    mime = value.h['content-type'];
-                } else if (value && !value.h && value.type === 'Buffer') {
+                if (value && !value.h && value.type === 'Buffer') {
                     const buffer = Buffer.from(value.data);
                     const currentFileType = fileType(buffer);
 
@@ -137,8 +139,8 @@ exports.plugin = {
                 } else if (request.query.type === 'preview' && mime === 'text/html') {
                     const $ = cheerio.load(Buffer.from(value));
                     const scriptNode = `<script>${iframeScript}</script>`;
-                    // inject postMessage into code
 
+                    // inject postMessage into code
                     $('body').append(scriptNode);
                     response = h.response($.html());
                     response.headers['content-type'] = mime;
