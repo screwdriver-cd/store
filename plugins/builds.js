@@ -3,12 +3,12 @@
 const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
-const fileType = require('file-type');
 const cheerio = require('cheerio');
 
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
+const { getMimeFromFileExtension } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -18,31 +18,6 @@ const TYPE = joi.string().optional()
 const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
-
-/**
- * getMimeFromFileExtension
- * @param  {String} file extension, like css, txt, html
- * @return {String} text/html
- */
-function getMimeFromFileExtension(fileExtension) {
-    let mime = '';
-
-    switch (fileExtension.toLowerCase()) {
-    case 'css':
-        mime = 'text/css';
-        break;
-    case 'js':
-        mime = 'text/javascript';
-        break;
-    case 'html':
-        mime = 'text/html';
-        break;
-    default:
-        break;
-    }
-
-    return mime;
-}
 
 exports.plugin = {
     name: 'builds',
@@ -121,15 +96,6 @@ exports.plugin = {
                 const fileName = artifact.split('/').pop();
                 const fileExt = fileName.split('.').pop();
                 let mime = getMimeFromFileExtension(fileExt);
-
-                if (value && !value.h && value.type === 'Buffer') {
-                    const buffer = Buffer.from(value.data);
-                    const currentFileType = fileType(buffer);
-
-                    if (currentFileType) {
-                        mime = currentFileType.mime;
-                    }
-                }
 
                 // only if the artifact is requested as downloadable item
                 if (request.query.type === 'download') {
