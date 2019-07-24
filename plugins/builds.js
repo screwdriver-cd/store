@@ -12,23 +12,35 @@ const { streamToBuffer } = require('../helpers/helper');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
-const TYPE = joi.string().valid(['', 'download', 'preview']).label('Flag to trigger type either to download or preview');
+const TYPE = joi.string()
+    .valid(['', 'download', 'preview'])
+    .label('Flag to trigger type either to download or preview');
 const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
+/**
+ * getMimeFromFileExtension
+ * @param  {String} file extension, like css, txt, html
+ * @return {String} text/html
+ */
 function getMimeFromFileExtension(fileExtension) {
     let mime = '';
+
     switch (fileExtension.toLowerCase()) {
-        case 'css':
-            mime = 'text/css';
-            break;
-        case 'js':
-            mime = 'text/javascript';
-        case 'html':
-            mime = 'text/html';
-            break;
+    case 'css':
+        mime = 'text/css';
+        break;
+    case 'js':
+        mime = 'text/javascript';
+        break;
+    case 'html':
+        mime = 'text/html';
+        break;
+    default:
+        break;
     }
+
     return mime;
 }
 
@@ -107,10 +119,11 @@ exports.plugin = {
                 let mime = getMimeFromFileExtension(fileExt);
 
                 if (value.h) {
-                   mime = value.h['content-type'];
+                    mime = value.h['content-type'];
                 } else if (value && !value.h && value.type === 'Buffer') {
                     const buffer = Buffer.from(value.data);
                     const currentFileType = fileType(buffer);
+
                     if (currentFileType) {
                         mime = currentFileType.mime;
                     }
@@ -122,9 +135,10 @@ exports.plugin = {
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(artifact.split('/').pop())}"`;
                 } else if (request.query.type === 'preview' && mime === 'text/html') {
-                    let $ = cheerio.load(Buffer.from(value));
+                    const $ = cheerio.load(Buffer.from(value));
                     const scriptNode = `<script>${iframeScript}</script>`;
                     // inject postMessage into code
+
                     $('body').append(scriptNode);
                     response = h.response($.html());
                     response.headers['content-type'] = mime;
