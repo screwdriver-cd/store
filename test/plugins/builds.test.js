@@ -117,6 +117,64 @@ describe('builds plugin test', () => {
                 })
             ));
         });
+
+        it('type=preview ending with html', async () => {
+            const id = `${mockBuildID}-foo.html`;
+            const content = 'HELLO WORLD';
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, content);
+
+            const getResponse = await server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                },
+                url: `/builds/${mockBuildID}/foo.html`
+            });
+
+            assert.equal(getResponse.statusCode, 200);
+            assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
+            assert.isNotOk(getResponse.headers['x-foo']);
+            assert.isNotOk(getResponse.headers.ignore);
+            assert.equal(getResponse.result, content);
+        });
+
+        it('type=preview not ending with html', async () => {
+            const id = `${mockBuildID}-foo`;
+            const content = 'HELLO WORLD';
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, content);
+
+            const getResponse = await server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                },
+                url: `/builds/${mockBuildID}/foo`
+            });
+
+            assert.equal(getResponse.statusCode, 200);
+            assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+            assert.isNotOk(getResponse.headers['x-foo']);
+            assert.isNotOk(getResponse.headers.ignore);
+            assert.equal(getResponse.result, content);
+        });
     });
 
     describe('PUT /builds/:id/:artifact', () => {
@@ -186,7 +244,7 @@ describe('builds plugin test', () => {
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
             const downloadResponse = await server.inject({
-                url: `/builds/${mockBuildID}/foo?download=true`,
+                url: `/builds/${mockBuildID}/foo?type=download`,
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']
@@ -223,7 +281,7 @@ describe('builds plugin test', () => {
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
             const downloadResponse = await server.inject({
-                url: `/builds/${mockBuildID}/日本語.txt?download=true`,
+                url: `/builds/${mockBuildID}/日本語.txt?type=download`,
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']

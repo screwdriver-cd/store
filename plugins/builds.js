@@ -3,12 +3,18 @@
 const joi = require('joi');
 const boom = require('boom');
 const config = require('config');
+const cheerio = require('cheerio');
+
 const AwsClient = require('../helpers/aws');
+const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
+const { getMimeFromFileExtension } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
-const DOWNLOAD = joi.string().valid(['', 'false', 'true']).label('Flag to trigger download');
+const TYPE = joi.string().optional()
+    .valid(['download', 'preview'])
+    .label('Flag to trigger type either to download or preview');
 const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
@@ -87,11 +93,23 @@ exports.plugin = {
                     }
                 }
 
+                const fileName = artifact.split('/').pop();
+                const fileExt = fileName.split('.').pop();
+                const mime = getMimeFromFileExtension(fileExt);
+
                 // only if the artifact is requested as downloadable item
-                if (request.query.download === 'true') {
+                if (request.query.type === 'download') {
                     // let browser sniff for the correct filename w/ extension
                     response.headers['content-disposition'] =
-                        `attachment; filename="${encodeURI(artifact.split('/').pop())}"`;
+                        `attachment; filename="${encodeURI(fileName)}"`;
+                } else if (request.query.type === 'preview' && mime === 'text/html') {
+                    const $ = cheerio.load(Buffer.from(value));
+                    const scriptNode = `<script>${iframeScript}</script>`;
+
+                    // inject postMessage into code
+                    $('body').append(scriptNode);
+                    response = h.response($.html());
+                    response.headers['content-type'] = mime;
                 }
 
                 return response;
@@ -115,7 +133,7 @@ exports.plugin = {
                         artifact: SCHEMA_ARTIFACT_ID
                     },
                     query: {
-                        download: DOWNLOAD,
+                        type: TYPE,
                         token: TOKEN
                     }
                 }
