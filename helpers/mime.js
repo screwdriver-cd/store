@@ -2,7 +2,7 @@
 
 /**
  * getMimeFromFileExtension
- * @param  {String} file extension, like css, txt, html
+ * @param  {String} fileExtension  File extension (e.g. css, txt, html)
  * @return {String} text/html
  */
 function getMimeFromFileExtension(fileExtension) {
