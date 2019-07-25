@@ -101,7 +101,7 @@ exports.plugin = {
                 if (request.query.type === 'download') {
                     // let browser sniff for the correct filename w/ extension
                     response.headers['content-disposition'] =
-                        `attachment; filename="${encodeURI(artifact.split('/').pop())}"`;
+                        `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview' && mime === 'text/html') {
                     const $ = cheerio.load(Buffer.from(value));
                     const scriptNode = `<script>${iframeScript}</script>`;
