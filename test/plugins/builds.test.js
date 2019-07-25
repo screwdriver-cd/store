@@ -258,7 +258,7 @@ describe('builds plugin test', () => {
             );
         });
 
-        it('saves an artifact of Japanese filename', async () => {
+        it.only('saves an artifact of Japanese filename', async () => {
             options.url = `/builds/${mockBuildID}/日本語.txt`;
 
             options.headers['content-type'] = 'application/x-ndjson';
@@ -281,7 +281,7 @@ describe('builds plugin test', () => {
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
             const downloadResponse = await server.inject({
-                url: `/builds/${mockBuildID}/日本語.txt?download=true`,
+                url: `/builds/${mockBuildID}/日本語.txt?type=download`,
                 credentials: {
                     username: mockBuildID,
                     scope: ['user']
