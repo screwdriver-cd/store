@@ -258,7 +258,7 @@ describe('builds plugin test', () => {
             );
         });
 
-        it.only('saves an artifact of Japanese filename', async () => {
+        it('saves an artifact of Japanese filename', async () => {
             options.url = `/builds/${mockBuildID}/日本語.txt`;
 
             options.headers['content-type'] = 'application/x-ndjson';
