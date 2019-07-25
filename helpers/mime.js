@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * getMimeFromFileExtension
  * @param  {String} file extension, like css, txt, html
@@ -22,7 +24,6 @@ function getMimeFromFileExtension(fileExtension) {
 
     return mime;
 }
-
 
 module.exports = {
     getMimeFromFileExtension
