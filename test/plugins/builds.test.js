@@ -195,7 +195,45 @@ describe('builds plugin test', () => {
 
             assert.equal(downloadResponse.statusCode, 200);
             assert.equal(
-                downloadResponse.headers['content-disposition'], 'attachment; filename="foo"'
+                downloadResponse.headers['content-disposition'],
+                'attachment; filename="foo"'
+            );
+        });
+
+        it('saves an artifact of Japanese filename', async () => {
+            options.url = `/builds/${mockBuildID}/日本語.txt`;
+
+            options.headers['content-type'] = 'application/x-ndjson';
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            const getResponse = await server.inject({
+                url: `/builds/${mockBuildID}/日本語.txt`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            });
+
+            assert.equal(getResponse.statusCode, 200);
+            assert.equal(getResponse.headers['x-foo'], 'bar');
+            assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
+            assert.isNotOk(getResponse.headers.ignore);
+            assert.equal(getResponse.result, 'THIS IS A TEST');
+
+            const downloadResponse = await server.inject({
+                url: `/builds/${mockBuildID}/日本語.txt?download=true`,
+                credentials: {
+                    username: mockBuildID,
+                    scope: ['user']
+                }
+            });
+
+            assert.equal(downloadResponse.statusCode, 200);
+            assert.equal(
+                downloadResponse.headers['content-disposition'],
+                'attachment; filename="%E6%97%A5%E6%9C%AC%E8%AA%9E.txt"'
             );
         });
 
