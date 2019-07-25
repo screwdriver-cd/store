@@ -91,7 +91,7 @@ exports.plugin = {
                 if (request.query.download === 'true') {
                     // let browser sniff for the correct filename w/ extension
                     response.headers['content-disposition'] =
-                        `attachment; filename="${artifact.split('/').pop()}"`;
+                        `attachment; filename="${encodeURI(artifact.split('/').pop())}"`;
                 }
 
                 return response;
