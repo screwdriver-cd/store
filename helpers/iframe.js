@@ -7,7 +7,7 @@ const apiVersion = 'v4';
 
 const iframeScript = `
     function isAbsolutePath(href) {
-        const absolutePath = new RegExp('^(http|https)://');
+        const absolutePath = new RegExp('^((http|https)://|#)');
         return absolutePath.test(href);
     };
 
