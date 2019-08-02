@@ -103,7 +103,7 @@ exports.plugin = {
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview') {
-                    if  (displableMimes.includes(mime)){
+                    if (displableMimes.includes(mime)) {
                         const $ = cheerio.load(Buffer.from(value));
                         const scriptNode = `<script>${iframeScript}</script>`;
 
