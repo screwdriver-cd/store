@@ -1,5 +1,6 @@
 'use strict';
 
+
 /**
  * getMimeFromFileExtension
  * @param  {String} fileExtension  File extension (e.g. css, txt, html)
@@ -24,7 +25,11 @@ function getMimeFromFileExtension(fileExtension) {
 
     return mime;
 }
+const executableMimes =['text/css', 'text/javascript'];
+const displableMimes = ['text/html'];
 
 module.exports = {
-    getMimeFromFileExtension
+    getMimeFromFileExtension,
+    displableMimes,
+    executableMimes
 };
