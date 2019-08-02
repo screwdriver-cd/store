@@ -11,6 +11,11 @@ const iframeScript = `
         return absolutePath.test(href);
     };
 
+    function maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref) {
+        const newUrl = apiUrlOrigin + '/' + apiVersion + '/' + urlFileDir + '/' + originalHref;
+        return newUrl.replace('ARTIFACTS', 'artifacts') + '?type=preview';
+    }
+
     function replaceHref(apiHref='${apiUrl}') {
         const currentIframeHref = new URL(document.location.href);
         const urlOrigin = currentIframeHref.origin;
@@ -25,17 +30,55 @@ const iframeScript = `
 
         const anchors = document.getElementsByTagName('a');
         for (let anchor of anchors) {
-          let originalHref = anchor.attributes.href.value;
-          if (isAbsolutePath(originalHref)) {
-              continue;
+          if (anchor.attributes.href) {
+              let originalHref = anchor.attributes.href.value;
+              if (isAbsolutePath(originalHref)) {
+                  continue;
+              }
+              anchor.href = maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref);
+              anchor.addEventListener('click', function(e) {
+                  top.postMessage({ state: 'redirect', href: anchor.href }, '*');
+                  e.preventDefault();
+              });
           }
-          const newUrl = apiUrlOrigin + '/' + apiVersion + '/' + urlFileDir + '/' + originalHref;
-          anchor.href = newUrl.replace('ARTIFACTS', 'artifacts') + '?type=preview';
-          anchor.addEventListener('click', function(e) {
-              top.postMessage({ state: 'redirect', href: anchor.href }, '*');
-              e.preventDefault();
-          });
         }
+
+        const styleLinks = document.getElementsByTagName('link');
+        for (let styleLink of styleLinks) {
+            if (styleLink.attributes.href) {
+                let originalHref = styleLink.attributes.href.value;
+                if (isAbsolutePath(originalHref)) {
+                    continue;
+                }
+                addCss(maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref));
+            }
+        }
+
+        const jsLinks = document.getElementsByTagName('script');
+        for (let jsLink of jsLinks) {
+            if (jsLink.attributes.src) {
+                let originalHref = jsLink.attributes.src.value;
+                if (isAbsolutePath(originalHref)) {
+                    continue;
+                }
+                addScript(maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref));
+            }
+        }
+    }
+
+    function addCss(src) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = src;
+        document.head.appendChild(link);
+    }
+
+    function addScript(src) {
+        const s = document.createElement('script');
+        s.type = 'text/javascript';
+        s.charset = 'utf-8';
+        s.src = src;
+        document.body.appendChild(s);
     }
 
     function replaceLinksMessage(e) {

@@ -8,7 +8,7 @@ const cheerio = require('cheerio');
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
-const { getMimeFromFileExtension } = require('../helpers/mime');
+const { getMimeFromFileExtension, displableMimes, executableMimes } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -102,14 +102,18 @@ exports.plugin = {
                     // let browser sniff for the correct filename w/ extension
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(fileName)}"`;
-                } else if (request.query.type === 'preview' && mime === 'text/html') {
-                    const $ = cheerio.load(Buffer.from(value));
-                    const scriptNode = `<script>${iframeScript}</script>`;
+                } else if (request.query.type === 'preview') {
+                    if (displableMimes.includes(mime)) {
+                        const $ = cheerio.load(Buffer.from(value));
+                        const scriptNode = `<script>${iframeScript}</script>`;
 
-                    // inject postMessage into code
-                    $('body').append(scriptNode);
-                    response = h.response($.html());
-                    response.headers['content-type'] = mime;
+                        // inject postMessage into code
+                        $('body').append(scriptNode);
+                        response = h.response($.html());
+                        response.headers['content-type'] = mime;
+                    } else if (executableMimes.includes(mime)) {
+                        response.headers['content-type'] = mime;
+                    }
                 }
 
                 return response;
