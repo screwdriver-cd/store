@@ -64,6 +64,17 @@ const iframeScript = `
                 addScript(maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref));
             }
         }
+
+        const imageLinks = document.getElementsByTagName('img');
+        for (let imageLink of imageLinks) {
+            if (imageLink.attributes.src) {
+                let originalHref = imageLink.attributes.src.value;
+                if (isAbsolutePath(imageLink)) {
+                    continue;
+                }
+                imageLink.src = maskWithAPI(apiUrlOrigin, apiVersion, urlFileDir, originalHref);
+            }
+        }
     }
 
     function addCss(src) {
