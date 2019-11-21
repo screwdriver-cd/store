@@ -3,7 +3,7 @@
 const AWS = require('aws-sdk');
 const stream = require('stream');
 const Boom = require('boom');
-const winston = require('winston');
+const logger = require('screwdriver-logger');
 
 class AwsClient {
     /**
@@ -174,7 +174,7 @@ class AwsClient {
             // check the header before returning a stream, if request failed, reject
             req.on('httpHeaders', (statusCode) => {
                 if (statusCode >= 400) {
-                    winston.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
+                    logger.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
 
                     return reject(new Boom('Fetch cache request failed', { statusCode }));
                 }
@@ -184,7 +184,7 @@ class AwsClient {
 
             s3stream = req.createReadStream()
                 .on('error', (error) => {
-                    winston.error(`Error streaming ${cacheKey}: ${error}`);
+                    logger.error(`Error streaming ${cacheKey}: ${error}`);
                 });
 
             return s3stream;

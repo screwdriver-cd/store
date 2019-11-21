@@ -2,7 +2,7 @@
 
 'use strict';
 
-const winston = require('winston');
+const logger = require('screwdriver-logger');
 const config = require('config');
 
 // Setup Caching strategy
@@ -37,9 +37,9 @@ async function init() {
             ecosystem
         });
 
-        return winston.info('Server running at %s', server.info.uri);
+        return logger.info('Server running at %s', server.info.uri);
     } catch (err) {
-        winston.error(err);
+        logger.error(err);
 
         return process.exit(1);
     }
