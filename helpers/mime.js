@@ -7,6 +7,7 @@
  */
 function getMimeFromFileExtension(fileExtension) {
     let mime = '';
+
     switch (fileExtension.toLowerCase()) {
     case 'html':
         mime = 'text/html';
