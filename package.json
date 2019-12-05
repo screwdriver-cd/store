@@ -74,6 +74,7 @@
     "hoek": "^5.0.3",
     "inert": "^5.1.2",
     "joi": "13.1.2",
+    "mime-types": "^2.1.25",
     "request": "^2.88.0",
     "screwdriver-data-schema": "^18.34.2",
     "screwdriver-logger": "^1.0.0",
