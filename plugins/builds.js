@@ -8,7 +8,7 @@ const cheerio = require('cheerio');
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
-const { getMimeFromFileExtension, displableMimes, executableMimes } = require('../helpers/mime');
+const { getMimeFromFileExtension, displableMimes, knownMimes } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -111,7 +111,7 @@ exports.plugin = {
                         $('body').append(scriptNode);
                         response = h.response($.html());
                         response.headers['content-type'] = mime;
-                    } else if (executableMimes.includes(mime)) {
+                    } else if (knownMimes.includes(mime)) {
                         response.headers['content-type'] = mime;
                     }
                 }
