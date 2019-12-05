@@ -7,16 +7,15 @@
  */
 function getMimeFromFileExtension(fileExtension) {
     let mime = '';
-
     switch (fileExtension.toLowerCase()) {
+    case 'html':
+        mime = 'text/html';
+        break;
     case 'css':
         mime = 'text/css';
         break;
     case 'js':
         mime = 'text/javascript';
-        break;
-    case 'html':
-        mime = 'text/html';
         break;
     case 'png':
         mime = 'image/png';
@@ -33,11 +32,11 @@ function getMimeFromFileExtension(fileExtension) {
 
     return mime;
 }
-const executableMimes = ['text/css', 'text/javascript'];
+const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg'];
 const displableMimes = ['text/html'];
 
 module.exports = {
     getMimeFromFileExtension,
     displableMimes,
-    executableMimes
+    knownMimes
 };
