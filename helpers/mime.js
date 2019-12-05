@@ -18,6 +18,15 @@ function getMimeFromFileExtension(fileExtension) {
     case 'html':
         mime = 'text/html';
         break;
+    case 'png':
+        mime = 'image/png';
+        break;
+    case 'jpeg':
+        mime = 'image/jpeg';
+        break;
+    case 'jpg':
+        mime = 'image/jpeg';
+        break;
     default:
         break;
     }
