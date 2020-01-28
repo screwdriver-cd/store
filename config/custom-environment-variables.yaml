@@ -64,6 +64,8 @@ strategy:
         forcePathStyle: S3_FORCE_PATH_STYLE
         # aws-sdk options for the size in bytes for each individual part to be uploaded.
         partSize: S3_PART_SIZE
+        # the default ACL for putting objects in your s3 bucket
+        ACL: S3_DEFAULT_ACL
 
 ecosystem:
     ui: ECOSYSTEM_UI
