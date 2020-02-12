@@ -13,6 +13,7 @@ describe('server case', function () {
     };
 
     let hapiEngine;
+    let server;
 
     beforeEach(() => {
         // eslint-disable-next-line global-require
@@ -20,13 +21,15 @@ describe('server case', function () {
     });
 
     afterEach(() => {
-        hapiEngine = null;
+        if (server) {
+            return server.stop();
+        }
+
+        return null;
     });
 
     describe('positive cases', () => {
         it('does it with a different port', async () => {
-            let server;
-
             try {
                 server = await hapiEngine({
                     httpd: {
