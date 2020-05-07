@@ -7,7 +7,9 @@
     "pretest": "eslint .",
     "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 4000 --retries 1 --exit --allow-uncaught true --color true",
     "start": "./bin/server",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -79,6 +81,8 @@
     "request": "^2.88.0",
     "screwdriver-data-schema": "^18.34.2",
     "screwdriver-logger": "^1.0.0",
-    "vision": "^5.4.3"
-  }
+    "vision": "^5.4.3",
+    "snyk": "^1.319.1"
+  },
+  "snyk": true
 }
