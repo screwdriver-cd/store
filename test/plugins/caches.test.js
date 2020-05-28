@@ -64,7 +64,8 @@ describe('caches plugin test using memory', () => {
             options: {
                 expiresInSec: '100',
                 maxByteSize: '5368709120'
-            } })
+            }
+        })
             .then(() => server.start());
     });
 
@@ -155,7 +156,8 @@ describe('caches plugin test using memory', () => {
                     options: {
                         expiresInSec: '100',
                         maxByteSize: '512'
-                    } });
+                    }
+                });
             });
 
             afterEach(() => {
@@ -269,7 +271,8 @@ describe('caches plugin test using memory', () => {
                     options: {
                         expiresInSec: '100',
                         maxByteSize: '512'
-                    } });
+                    }
+                });
             });
 
             afterEach(() => {
@@ -673,10 +676,10 @@ describe('caches plugin test using s3', () => {
     let plugin;
     let server;
     let awsClientMock;
-    let reqMock;
     let configMock;
     let getDownloadStreamMock;
     let uploadAsStreamMock;
+    let invalidateCacheMock;
 
     before(() => {
         mockery.enable({
@@ -695,23 +698,17 @@ describe('caches plugin test using s3', () => {
 
         getDownloadStreamMock = sinon.stub().resolves(null);
         uploadAsStreamMock = sinon.stub().resolves(null);
+        invalidateCacheMock = sinon.stub().yields(null);
 
         awsClientMock = sinon.stub().returns({
             updateLastModified: sinon.stub().yields(null),
-            invalidateCache: sinon.stub().yields(null),
+            invalidateCache: invalidateCacheMock,
             getDownloadStream: getDownloadStreamMock,
             uploadAsStream: uploadAsStreamMock
         });
 
-        reqMock = sinon.stub();
-
-        reqMock.yieldsAsync({
-            statusCode: 403
-        });
-
         mockery.registerMock('../helpers/aws', awsClientMock);
         mockery.registerMock('config', configMock);
-        mockery.registerMock('request', reqMock);
 
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/caches');
@@ -736,7 +733,8 @@ describe('caches plugin test using s3', () => {
             options: {
                 expiresInSec: '100',
                 maxByteSize: '5368709120'
-            } })
+            }
+        })
             .then(() => server.start());
     });
 
@@ -868,31 +866,25 @@ describe('caches plugin test using s3', () => {
         });
 
         it('Returns 200 if successfully invalidate cache', () => {
-            reqMock.yieldsAsync(null, {
-                statusCode: 200,
-                body: true
-            });
+            invalidateCacheMock.yields(null);
 
             return server.inject(deleteOptions).then((deleteResponse) => {
                 assert.equal(deleteResponse.statusCode, 204);
             });
         });
 
-        it('Returns 403 if user does not have permission', () => {
-            reqMock.yieldsAsync(null, {
-                statusCode: 200,
-                body: false
-            });
+        it('Returns 400 if scope is invalid', () => {
+            deleteOptions.url = `/caches/builds/${mockJobID}`;
 
             return server.inject(deleteOptions).then((deleteResponse) => {
-                assert.equal(deleteResponse.statusCode, 403);
+                assert.equal(deleteResponse.statusCode, 400);
             });
         });
 
         it('Returns 500 if user cannot invalidate cache', () => {
             const err = new Error('bad');
 
-            reqMock.yieldsAsync(err);
+            invalidateCacheMock.yields(err, {});
 
             return server.inject(deleteOptions).then((deleteResponse) => {
                 assert.equal(deleteResponse.statusCode, 500);
