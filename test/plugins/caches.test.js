@@ -651,7 +651,7 @@ describe('caches plugin test using memory', () => {
                 },
                 credentials: {
                     username: 'testuser',
-                    scope: ['user']
+                    scope: ['sdapi']
                 },
                 url: `/caches/jobs/${mockJobID}`
             };
@@ -665,6 +665,22 @@ describe('caches plugin test using memory', () => {
 
             return server.inject(deleteOptions).then((deleteResponse) => {
                 assert.equal(deleteResponse.statusCode, 200);
+            });
+        });
+
+        it('Returns 403 if auth scope is different', () => {
+            reqMock.yieldsAsync(null, {
+                statusCode: 200,
+                body: true
+            });
+
+            deleteOptions.credentials = {
+                username: 'testuser',
+                scope: ['user']
+            };
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 403);
             });
         });
     });
@@ -859,7 +875,7 @@ describe('caches plugin test using s3', () => {
                 },
                 credentials: {
                     username: 'testuser',
-                    scope: ['user']
+                    scope: ['sdapi']
                 },
                 url: `/caches/jobs/${mockJobID}`
             };
@@ -888,6 +904,17 @@ describe('caches plugin test using s3', () => {
 
             return server.inject(deleteOptions).then((deleteResponse) => {
                 assert.equal(deleteResponse.statusCode, 500);
+            });
+        });
+
+        it('Returns 403 if auth scope is different', () => {
+            deleteOptions.credentials = {
+                username: 'testuser',
+                scope: ['user']
+            };
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 403);
             });
         });
     });

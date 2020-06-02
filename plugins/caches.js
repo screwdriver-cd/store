@@ -406,7 +406,7 @@ exports.plugin = {
                 tags: ['api', 'events', 'jobs', 'pipelines'],
                 auth: {
                     strategies: ['token'],
-                    scope: ['user']
+                    scope: ['sdapi']
                 },
                 plugins: {
                     'hapi-swagger': {
