@@ -66,6 +66,8 @@ strategy:
         partSize: S3_PART_SIZE
         # the default ACL for putting objects in your s3 bucket
         ACL: S3_DEFAULT_ACL
+        # default http timeout
+        httpTimeout: S3_HTTP_TIMEOUT
 
 ecosystem:
     ui: ECOSYSTEM_UI
