@@ -5,7 +5,6 @@ const boom = require('boom');
 const config = require('config');
 const AwsClient = require('../helpers/aws');
 const { streamToBuffer } = require('../helpers/helper');
-const req = require('request');
 
 const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).label('Scope Name');
 const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
@@ -374,86 +373,32 @@ exports.plugin = {
         }, {
             method: 'DELETE',
             path: '/caches/{scope}/{id}',
-            handler: (request, h) => {
-                if (!usingS3) {
-                    return h.response();
-                }
-
+            handler: async (request, h) => {
                 let cachePath;
-                const apiUrl = config.get('ecosystem.api');
-                const opts = {
-                    url: `${apiUrl}/v4/isAdmin`,
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${request.auth.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    json: true
-                };
 
-                switch (request.params.scope) {
-                case 'events': {
-                    const eventIdParam = request.params.id;
-
-                    opts.qs = {
-                        eventId: eventIdParam
-                    };
-
-                    cachePath = `events/${eventIdParam}/`;
-                    break;
-                }
-                case 'jobs': {
-                    const jobIdParam = request.params.id;
-
-                    opts.qs = {
-                        jobId: jobIdParam
-                    };
-
-                    cachePath = `jobs/${jobIdParam}/`;
-                    break;
-                }
-                case 'pipelines': {
-                    const pipelineIdParam = request.params.id;
-
-                    opts.qs = {
-                        pipelineId: pipelineIdParam
-                    };
-
-                    cachePath = `pipelines/${pipelineIdParam}/`;
-                    break;
-                }
-                default:
-                    return boom.forbidden('Invalid scope');
-                }
-
-                return new Promise((resolve, reject) => req(opts, (err, response) => {
-                    if (!err && response.body === true) {
-                        return awsClient.invalidateCache(cachePath, (e) => {
-                            if (e) {
-                                return reject(e);
-                            }
-
-                            return resolve();
-                        });
+                try {
+                    if (!usingS3) {
+                        return h.response();
                     }
 
-                    if (!err && response.body === false) {
-                        return reject('Permission denied');
-                    }
+                    const { scope, id } = request.params;
 
-                    return reject(err);
-                })).then(() => {
+                    cachePath = `${scope}/${id}/`;
+
+                    await awsClient.invalidateCache(cachePath, (err) => {
+                        if (err) {
+                            throw err;
+                        }
+                    });
+
                     request.log([cachePath, 'info'], 'Successfully deleted a cache');
 
                     return h.response().code(204);
-                }).catch((err) => {
-                    if (err === 'Permission denied') {
-                        return boom.forbidden(err);
-                    }
+                } catch (err) {
                     request.log([cachePath, 'error'], `Failed to delete a cache: ${err}`);
 
                     return h.response().code(500);
-                });
+                }
             },
             options: {
                 description: 'Invalidate cache folder',
@@ -461,7 +406,7 @@ exports.plugin = {
                 tags: ['api', 'events', 'jobs', 'pipelines'],
                 auth: {
                     strategies: ['token'],
-                    scope: ['user']
+                    scope: ['sdapi']
                 },
                 plugins: {
                     'hapi-swagger': {
