@@ -18,13 +18,17 @@ class AwsClient {
      * @param  {String}    config.bucket             S3 bucket
      * @param  {String}    config.segment            S3 segment
      * @param  {Integer}   config.partSize           aws-sdk upload option
+     * @param  {Integer}   config.httpTimeout        HTTP timeout in ms
      */
     constructor(config) {
         const options = {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
             region: config.region,
-            s3ForcePathStyle: config.forcePathStyle
+            s3ForcePathStyle: config.forcePathStyle,
+            httpOptions: {
+                timeout: +config.httpTimeout
+            }
         };
 
         if (config.endpoint) {
