@@ -27,7 +27,7 @@ class AwsClient {
             region: config.region,
             s3ForcePathStyle: config.forcePathStyle,
             httpOptions: {
-                timeout: config.httpTimeout
+                timeout: +config.httpTimeout
             }
         };
 
