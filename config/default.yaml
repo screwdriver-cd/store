@@ -74,7 +74,7 @@ strategy:
         partSize: 5242880 # default 5mb
         # the default ACL for putting objects in your s3 bucket
         ACL: 'public-read'
-        # default http timeout (match with logservice timeout)
+        # default http timeout in ms, default 20s
         httpTimeout: 20000
 
 ecosystem:
