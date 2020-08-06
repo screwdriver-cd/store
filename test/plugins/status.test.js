@@ -2,7 +2,7 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
 
 sinon.assert.expose(assert, { prefix: '' });

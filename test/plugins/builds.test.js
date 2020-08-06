@@ -2,10 +2,10 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
-const catmemory = require('catbox-memory');
-const Boom = require('boom');
+const Catmemory = require('@hapi/catbox-memory');
+const Boom = require('@hapi/boom');
 
 const mockBuildID = 1899999;
 
@@ -28,9 +28,9 @@ describe('builds plugin test', () => {
 
         server = Hapi.server({
             cache: {
-                engine: catmemory,
-                maxByteSize: 512,
-                allowMixedContent: true
+                engine: new Catmemory({
+                    maxByteSize: 512
+                })
             },
             port: 1234
         });
@@ -66,10 +66,12 @@ describe('builds plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } },
                 url: `/builds/${mockBuildID}/foo`
             }).then((response) => {
                 assert.equal(response.statusCode, 404);
@@ -82,9 +84,9 @@ describe('builds plugin test', () => {
             beforeEach(() => {
                 badServer = Hapi.server({
                     cache: {
-                        engine: catmemory,
-                        maxByteSize: 9999999999,
-                        allowMixedContent: true
+                        engine: new Catmemory({
+                            maxByteSize: 9999999999
+                        })
                     },
                     port: 12345
                 });
@@ -107,10 +109,12 @@ describe('builds plugin test', () => {
                     headers: {
                         'x-foo': 'bar'
                     },
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['user']
+                        } },
                     url: `/builds/${mockBuildID}/foo`
                 }).then((response) => {
                     assert.equal(response.statusCode, 500);
@@ -133,10 +137,12 @@ describe('builds plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } },
                 url: `/builds/${mockBuildID}/foo.html`
             });
 
@@ -162,10 +168,12 @@ describe('builds plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } },
                 url: `/builds/${mockBuildID}/foo`
             });
 
@@ -189,10 +197,12 @@ describe('builds plugin test', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['build']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['build']
+                    } }
             };
         });
 
@@ -231,10 +241,12 @@ describe('builds plugin test', () => {
 
             const getResponse = await server.inject({
                 url: `/builds/${mockBuildID}/foo`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             });
 
             assert.equal(getResponse.statusCode, 200);
@@ -245,10 +257,12 @@ describe('builds plugin test', () => {
 
             const downloadResponse = await server.inject({
                 url: `/builds/${mockBuildID}/foo?type=download`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             });
 
             assert.equal(downloadResponse.statusCode, 200);
@@ -268,10 +282,12 @@ describe('builds plugin test', () => {
 
             const getResponse = await server.inject({
                 url: `/builds/${mockBuildID}/日本語.txt`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             });
 
             assert.equal(getResponse.statusCode, 200);
@@ -282,10 +298,12 @@ describe('builds plugin test', () => {
 
             const downloadResponse = await server.inject({
                 url: `/builds/${mockBuildID}/日本語.txt?type=download`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             });
 
             assert.equal(downloadResponse.statusCode, 200);
@@ -304,10 +322,12 @@ describe('builds plugin test', () => {
 
             return server.inject({
                 url: `/builds/${mockBuildID}/foo`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
@@ -326,10 +346,12 @@ describe('builds plugin test', () => {
 
             return server.inject({
                 url: `/builds/${mockBuildID}/foo.html`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
@@ -349,10 +371,12 @@ describe('builds plugin test', () => {
 
             return server.inject({
                 url: `/builds/${mockBuildID}/foo`,
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['pipeline']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['pipeline']
+                    } }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
@@ -410,9 +434,9 @@ describe('builds plugin test using s3', () => {
 
         server = Hapi.server({
             cache: {
-                engine: catmemory,
-                maxByteSize: 512,
-                allowMixedContent: true
+                engine: new Catmemory({
+                    maxByteSize: 512
+                })
             },
             port: 1234
         });
@@ -448,21 +472,23 @@ describe('builds plugin test using s3', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } },
                 url: `/builds/${mockBuildID}/foo.zip`
             }).then((response) => {
                 assert.calledWith(getDownloadStreamMock, {
                     cacheKey: `${mockBuildID}-foo.zip`
                 });
-                assert.equal(response.statusCode, 200);
+                assert.equal(response.statusCode, 204);
             })
         ));
 
         it('returns 404 if not found', () => {
-            getDownloadStreamMock.rejects(new Boom('Not found', {
+            getDownloadStreamMock.rejects(Boom.boomify(new Error('Not found'), {
                 statusCode: 404
             }));
 
@@ -470,10 +496,12 @@ describe('builds plugin test using s3', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['user']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    } },
                 url: `/builds/${mockBuildID}/foo.zip`
             }).then((response) => {
                 assert.calledWith(getDownloadStreamMock, {
@@ -495,10 +523,12 @@ describe('builds plugin test using s3', () => {
                     'x-foo': 'bar',
                     ignore: 'true'
                 },
-                credentials: {
-                    username: mockBuildID,
-                    scope: ['build']
-                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['build']
+                    } },
                 url: `/builds/${mockBuildID}/foo.zip`
             };
         });
@@ -513,11 +543,13 @@ describe('builds plugin test using s3', () => {
 
             return server.inject({
                 url: options.url,
-                credentials: {
-                    scope: ['user']
-                }
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    } }
             }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.statusCode, 204);
                 assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);

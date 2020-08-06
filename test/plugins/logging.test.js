@@ -2,8 +2,7 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
-const mockery = require('mockery');
+const Hapi = require('@hapi/hapi');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -11,35 +10,22 @@ describe('logging plugin test', () => {
     let plugin;
     let server;
 
-    before(() => {
-        mockery.enable({
-            useCleanCache: true,
-            warnOnUnregistered: false
-        });
-    });
-
-    beforeEach(() => {
+    beforeEach(async () => {
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/logging');
 
-        server = Hapi.server({
+        server = await Hapi.server({
             port: 1234
         });
 
-        return server.register([plugin]);
+        return server.register(plugin);
     });
 
     afterEach(() => {
         server = null;
-        mockery.deregisterAll();
-        mockery.resetCache();
-    });
-
-    after(() => {
-        mockery.disable();
     });
 
     it('registers the plugin', () => {
-        assert.isOk(server.registrations.good);
+        assert.isOk(server.registrations['@hapi/good']);
     });
 });

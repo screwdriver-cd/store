@@ -2,7 +2,7 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');

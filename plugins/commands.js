@@ -1,6 +1,7 @@
 'use strict';
 
-const boom = require('boom');
+const joi = require('joi');
+const boom = require('@hapi/boom');
 const schema = require('screwdriver-data-schema');
 const SCHEMA_COMMAND_NAMESPACE = schema.config.command.namespace;
 const SCHEMA_COMMAND_NAME = schema.config.command.name;
@@ -66,11 +67,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         namespace: SCHEMA_COMMAND_NAMESPACE,
                         name: SCHEMA_COMMAND_NAME,
                         version: SCHEMA_COMMAND_VERSION
-                    }
+                    })
                 }
             }
         }, {
@@ -124,11 +125,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         namespace: SCHEMA_COMMAND_NAMESPACE,
                         name: SCHEMA_COMMAND_NAME,
                         version: SCHEMA_COMMAND_VERSION
-                    }
+                    })
                 }
             }
         }, {
@@ -163,11 +164,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         namespace: SCHEMA_COMMAND_NAMESPACE,
                         name: SCHEMA_COMMAND_NAME,
                         version: SCHEMA_COMMAND_VERSION
-                    }
+                    })
                 }
             }
         }]);

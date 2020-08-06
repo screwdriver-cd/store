@@ -1,12 +1,12 @@
 'use strict';
 
 const joi = require('joi');
-const boom = require('boom');
+const boom = require('@hapi/boom');
 const config = require('config');
 const AwsClient = require('../helpers/aws');
 const { streamToBuffer } = require('../helpers/helper');
 
-const SCHEMA_SCOPE_NAME = joi.string().valid(['events', 'jobs', 'pipelines']).label('Scope Name');
+const SCHEMA_SCOPE_NAME = joi.string().valid('events', 'jobs', 'pipelines').label('Scope Name');
 const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
 
@@ -153,11 +153,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         scope: SCHEMA_SCOPE_NAME,
                         id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
-                    }
+                    })
                 }
             }
         }, {
@@ -283,11 +283,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         scope: SCHEMA_SCOPE_NAME,
                         id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
-                    }
+                    })
                 }
             }
         }, {
@@ -363,11 +363,11 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         scope: SCHEMA_SCOPE_NAME,
                         id: SCHEMA_SCOPE_ID,
                         cacheName: SCHEMA_CACHE_NAME
-                    }
+                    })
                 }
             }
         }, {
@@ -414,10 +414,10 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         scope: SCHEMA_SCOPE_NAME,
                         id: SCHEMA_SCOPE_ID
-                    }
+                    })
                 }
             }
         }]);

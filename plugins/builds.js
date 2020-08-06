@@ -1,7 +1,7 @@
 'use strict';
 
 const joi = require('joi');
-const boom = require('boom');
+const boom = require('@hapi/boom');
 const config = require('config');
 const cheerio = require('cheerio');
 
@@ -13,7 +13,7 @@ const { getMimeFromFileExtension, displableMimes, knownMimes } = require('../hel
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
 const TYPE = joi.string().optional()
-    .valid(['download', 'preview'])
+    .valid('download', 'preview')
     .label('Flag to trigger type either to download or preview');
 const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
@@ -132,14 +132,14 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         id: SCHEMA_BUILD_ID,
                         artifact: SCHEMA_ARTIFACT_ID
-                    },
-                    query: {
+                    }),
+                    query: joi.object({
                         type: TYPE,
                         token: TOKEN
-                    }
+                    })
                 }
             }
         }, {
@@ -225,10 +225,10 @@ exports.plugin = {
                     }
                 },
                 validate: {
-                    params: {
+                    params: joi.object({
                         id: SCHEMA_BUILD_ID,
                         artifact: SCHEMA_ARTIFACT_ID
-                    }
+                    })
                 }
             }
         }]);

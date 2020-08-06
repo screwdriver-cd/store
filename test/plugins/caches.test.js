@@ -2,10 +2,10 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
-const catmemory = require('catbox-memory');
-const Boom = require('boom');
+const Catmemory = require('@hapi/catbox-memory');
+const Boom = require('@hapi/boom');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -46,9 +46,9 @@ describe('caches plugin test using memory', () => {
 
         server = Hapi.server({
             cache: {
-                engine: catmemory,
-                maxByteSize: 512,
-                allowMixedContent: true
+                engine: new Catmemory({
+                    maxByteSize: 512
+                })
             },
             port: 1234
         });
@@ -90,9 +90,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: 5555,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: 5555,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/invalid/${mockEventID}/foo`
             }).then((response) => {
@@ -107,9 +110,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo`
             }).then((response) => {
@@ -122,9 +128,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: 5555,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: 5555,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo`
             }).then((response) => {
@@ -138,9 +147,9 @@ describe('caches plugin test using memory', () => {
             beforeEach(() => {
                 badServer = Hapi.server({
                     cache: {
-                        engine: catmemory,
-                        maxByteSize: 9999999999,
-                        allowMixedContent: true
+                        engine: new Catmemory({
+                            maxByteSize: 9999999999
+                        })
                     },
                     port: 12345
                 });
@@ -169,9 +178,12 @@ describe('caches plugin test using memory', () => {
                     headers: {
                         'x-foo': 'bar'
                     },
-                    credentials: {
-                        eventId: mockEventID,
-                        scope: ['build']
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            eventId: mockEventID,
+                            scope: ['build']
+                        }
                     },
                     url: `/caches/events/${mockEventID}/foo`
                 }).then((response) => {
@@ -187,9 +199,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}/foo`
             }).then((response) => {
@@ -206,9 +221,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             };
 
@@ -221,10 +239,13 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/jobs/${mockJobID}/foo`,
-                credentials: {
-                    jobId: 5555,
-                    prParentJobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: 5555,
+                        prParentJobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -237,9 +258,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    jobId: 5555,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: 5555,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}/foo`
             }).then((response) => {
@@ -253,9 +277,9 @@ describe('caches plugin test using memory', () => {
             beforeEach(() => {
                 badServer = Hapi.server({
                     cache: {
-                        engine: catmemory,
-                        maxByteSize: 9999999999,
-                        allowMixedContent: true
+                        engine: new Catmemory({
+                            maxByteSize: 9999999999
+                        })
                     },
                     port: 12345
                 });
@@ -284,9 +308,12 @@ describe('caches plugin test using memory', () => {
                     headers: {
                         'x-foo': 'bar'
                     },
-                    credentials: {
-                        jobId: mockJobID,
-                        scope: ['build']
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            jobId: mockJobID,
+                            scope: ['build']
+                        }
                     },
                     url: `/caches/jobs/${mockJobID}/foo`
                 }).then((response) => {
@@ -308,9 +335,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             };
         });
@@ -333,9 +363,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/events/${mockEventID}/foo`,
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -355,9 +388,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/events/${mockEventID}/foo`,
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -378,9 +414,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/events/${mockEventID}/foo`,
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -401,9 +440,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             };
         });
@@ -426,9 +468,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/jobs/${mockJobID}/foo`,
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -448,9 +493,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/jobs/${mockJobID}/foo`,
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -471,9 +519,12 @@ describe('caches plugin test using memory', () => {
 
             return server.inject({
                 url: `/caches/jobs/${mockJobID}/foo`,
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -492,9 +543,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo`
             };
@@ -506,9 +560,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo`
             };
@@ -519,9 +576,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo`
             };
@@ -536,7 +596,7 @@ describe('caches plugin test using memory', () => {
         }));
 
         it('returns 403 if credentials is not valid', () => {
-            deleteOptions.credentials.eventId = 5555;
+            deleteOptions.auth.credentials.eventId = 5555;
 
             return server.inject(deleteOptions).then((response) => {
                 assert.equal(response.statusCode, 403);
@@ -570,9 +630,12 @@ describe('caches plugin test using memory', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}/foo`
             };
@@ -584,9 +647,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}/foo`
             };
@@ -597,9 +663,12 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    jobId: mockJobID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        jobId: mockJobID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}/foo`
             };
@@ -614,7 +683,7 @@ describe('caches plugin test using memory', () => {
         }));
 
         it('returns 403 if credentials is not valid', () => {
-            deleteOptions.credentials.jobId = 5555;
+            deleteOptions.auth.credentials.jobId = 5555;
 
             return server.inject(deleteOptions).then((response) => {
                 assert.equal(response.statusCode, 403);
@@ -649,22 +718,25 @@ describe('caches plugin test using memory', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    username: 'testuser',
-                    scope: ['sdapi']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: 'testuser',
+                        scope: ['sdapi']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}`
             };
         });
 
-        it('Returns 200 if successfully invalidate cache', () => {
+        it('Returns 204 if successfully invalidate cache', () => {
             reqMock.yieldsAsync(null, {
                 statusCode: 200,
                 body: true
             });
 
             return server.inject(deleteOptions).then((deleteResponse) => {
-                assert.equal(deleteResponse.statusCode, 200);
+                assert.equal(deleteResponse.statusCode, 204);
             });
         });
 
@@ -674,7 +746,7 @@ describe('caches plugin test using memory', () => {
                 body: true
             });
 
-            deleteOptions.credentials = {
+            deleteOptions.auth.credentials = {
                 username: 'testuser',
                 scope: ['user']
             };
@@ -731,9 +803,9 @@ describe('caches plugin test using s3', () => {
 
         server = Hapi.server({
             cache: {
-                engine: catmemory,
-                maxByteSize: 512,
-                allowMixedContent: true
+                engine: new Catmemory({
+                    maxByteSize: 512
+                })
             },
             port: 1234
         });
@@ -770,26 +842,29 @@ describe('caches plugin test using s3', () => {
     });
 
     describe('GET /caches/events/:id/:cacheName', () => {
-        it('returns 200', () => (
+        it('returns 204', () => (
             server.inject({
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo.zip`
             }).then((response) => {
                 assert.calledWith(getDownloadStreamMock, {
                     cacheKey: `events/${mockEventID}/foo.zip`
                 });
-                assert.equal(response.statusCode, 200);
+                assert.equal(response.statusCode, 204);
             })
         ));
 
         it('returns 404 if not found', () => {
-            getDownloadStreamMock.rejects(new Boom('Not found', {
+            getDownloadStreamMock.rejects(Boom.boomify(new Error('Not found'), {
                 statusCode: 404
             }));
 
@@ -797,9 +872,12 @@ describe('caches plugin test using s3', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 },
                 url: `/caches/events/${mockEventID}/foo.zip`
             }).then((response) => {
@@ -823,9 +901,12 @@ describe('caches plugin test using s3', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             };
         });
@@ -839,12 +920,15 @@ describe('caches plugin test using s3', () => {
 
             return server.inject({
                 url: `/caches/events/${mockEventID}/foo.zip`,
-                credentials: {
-                    eventId: mockEventID,
-                    scope: ['build']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        eventId: mockEventID,
+                        scope: ['build']
+                    }
                 }
             }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.statusCode, 204);
                 assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
@@ -873,9 +957,12 @@ describe('caches plugin test using s3', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    username: 'testuser',
-                    scope: ['sdapi']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: 'testuser',
+                        scope: ['sdapi']
+                    }
                 },
                 url: `/caches/jobs/${mockJobID}`
             };
@@ -908,7 +995,7 @@ describe('caches plugin test using s3', () => {
         });
 
         it('Returns 403 if auth scope is different', () => {
-            deleteOptions.credentials = {
+            deleteOptions.auth.credentials = {
                 username: 'testuser',
                 scope: ['user']
             };
