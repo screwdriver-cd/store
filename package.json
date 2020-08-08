@@ -8,7 +8,7 @@
     "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --recursive --timeout 4000 --retries 1 --exit --allow-uncaught true --color true",
     "start": "./bin/server",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
-    "debug": "node --nolazy --inspect-brk=9229 ./bin/server"
+    "debug": "node --nolazy ./bin/server"
   },
   "repository": {
     "type": "git",
