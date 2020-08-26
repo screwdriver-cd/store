@@ -79,7 +79,7 @@
     "joi": "^17.2.0",
     "mime-types": "^2.1.25",
     "request": "^2.88.0",
-    "screwdriver-data-schema": "20.0.0",
+    "screwdriver-data-schema": "^20.0.0",
     "screwdriver-logger": "^1.0.0"
   }
 }

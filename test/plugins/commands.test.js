@@ -4,7 +4,7 @@ const { assert } = require('chai');
 const sinon = require('sinon');
 const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
-const Catmemory = require('@hapi/catbox-memory');
+const CatboxMemory = require('@hapi/catbox-memory');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -28,7 +28,7 @@ describe('commands plugin test', () => {
 
         server = Hapi.server({
             cache: {
-                engine: new Catmemory({
+                engine: new CatboxMemory({
                     maxByteSize: 512
                 })
             },
@@ -84,7 +84,7 @@ describe('commands plugin test', () => {
             beforeEach(() => {
                 badServer = Hapi.server({
                     cache: {
-                        engine: new Catmemory({
+                        engine: new CatboxMemory({
                             maxByteSize: 9999999999
                         })
                     },
