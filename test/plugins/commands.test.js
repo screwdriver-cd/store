@@ -2,9 +2,9 @@
 
 const { assert } = require('chai');
 const sinon = require('sinon');
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
-const catmemory = require('catbox-memory');
+const CatboxMemory = require('@hapi/catbox-memory');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -22,15 +22,15 @@ describe('commands plugin test', () => {
         });
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/commands');
 
         server = Hapi.server({
             cache: {
-                engine: catmemory,
-                maxByteSize: 512,
-                allowMixedContent: true
+                engine: new CatboxMemory({
+                    maxByteSize: 512
+                })
             },
             port: 1234
         });
@@ -41,8 +41,8 @@ describe('commands plugin test', () => {
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        return server.register({ plugin })
-            .then(() => server.start());
+        await server.register({ plugin });
+        await server.start();
     });
 
     afterEach(async () => {
@@ -66,8 +66,11 @@ describe('commands plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    scope: ['user']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/0.0`
             }).then((response) => {
@@ -81,9 +84,9 @@ describe('commands plugin test', () => {
             beforeEach(() => {
                 badServer = Hapi.server({
                     cache: {
-                        engine: catmemory,
-                        maxByteSize: 9999999999,
-                        allowMixedContent: true
+                        engine: new CatboxMemory({
+                            maxByteSize: 9999999999
+                        })
                     },
                     port: 12345
                 });
@@ -106,8 +109,11 @@ describe('commands plugin test', () => {
                     headers: {
                         'x-foo': 'bar'
                     },
-                    credentials: {
-                        scope: ['user']
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
                     },
                     url: `/commands/${mockCommandNamespace}/`
                         + `${mockCommandName}/${mockCommandVersion}`
@@ -130,16 +136,19 @@ describe('commands plugin test', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    scope: ['build'],
-                    pipelineId: 123
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['build'],
+                        pipelineId: 123
+                    }
                 }
             };
         });
 
-        it('returns 403 if wrong creds', () => {
+        it('returns 403 if wrong `cred`s', () => {
             options.url = '/commands/foo/bar/1.2.3';
-            options.credentials.scope = ['user'];
+            options.auth.credentials.scope = ['user'];
 
             return server.inject(options).then((response) => {
                 assert.equal(response.statusCode, 403);
@@ -168,12 +177,15 @@ describe('commands plugin test', () => {
 
             return server.inject({
                 url: `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`,
+                    + `${mockCommandName}/${mockCommandVersion}`,
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    scope: ['user']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
                 }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
@@ -195,8 +207,11 @@ describe('commands plugin test', () => {
                 headers: {
                     'x-foo': 'bar'
                 },
-                credentials: {
-                    scope: ['user']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/1.2.5`
             };
@@ -208,9 +223,12 @@ describe('commands plugin test', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    scope: ['build'],
-                    pipelineId: 123
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['build'],
+                        pipelineId: 123
+                    }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/1.2.5`
             };
@@ -221,8 +239,11 @@ describe('commands plugin test', () => {
                     'content-type': 'text/plain',
                     ignore: 'true'
                 },
-                credentials: {
-                    scope: ['user']
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/1.2.5`
             };

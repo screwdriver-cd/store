@@ -2,7 +2,7 @@
 
 const AWS = require('aws-sdk');
 const stream = require('stream');
-const Boom = require('boom');
+const Boom = require('@hapi/boom');
 const logger = require('screwdriver-logger');
 
 class AwsClient {
@@ -179,8 +179,9 @@ class AwsClient {
             req.on('httpHeaders', (statusCode) => {
                 if (statusCode >= 400) {
                     logger.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
+                    const error = new Error('Fetch cache request failed');
 
-                    return reject(new Boom('Fetch cache request failed', { statusCode }));
+                    return reject(Boom.boomify(error, { statusCode }));
                 }
 
                 return resolve(s3stream);

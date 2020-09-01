@@ -11,8 +11,11 @@ const strategyModule = `catbox-${strategyConfig.plugin}`;
 
 // eslint-disable-next-line import/no-dynamic-require
 const strategy = require(strategyModule);
-const cache = Object.assign({ engine: strategy }, strategyConfig[strategyConfig.plugin]);
-
+const cache = {
+    engine: new strategy({
+        ...strategyConfig[strategyConfig.plugin]
+    })
+};
 const httpd = config.get('httpd');
 const auth = config.get('auth');
 const builds = config.get('builds');

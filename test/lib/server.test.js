@@ -1,7 +1,7 @@
 'use strict';
 
 const { assert } = require('chai');
-const engine = require('catbox-memory');
+const Catbox = require('@hapi/catbox-memory');
 
 describe('server case', function () {
     // Time not important. Only life important.
@@ -35,7 +35,9 @@ describe('server case', function () {
                     httpd: {
                         port: 12347
                     },
-                    cache: { engine },
+                    cache: {
+                        engine: new Catbox()
+                    },
                     auth: {
                         jwtPublicKey: '12345'
                     },
@@ -71,7 +73,9 @@ describe('server case', function () {
             httpd: {
                 port: 12347
             },
-            cache: { engine },
+            cache: {
+                engine: new Catbox()
+            },
             commands: {},
             ecosystem
         })

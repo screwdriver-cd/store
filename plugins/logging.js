@@ -1,6 +1,6 @@
 'use strict';
 
-const good = require('good');
+const good = require('@hapi/good');
 
 const options = {
     ops: {
@@ -8,11 +8,11 @@ const options = {
     },
     reporters: {
         console: [{
-            module: 'good-squeeze',
+            module: '@hapi/good-squeeze',
             name: 'Squeeze',
             args: [{ error: '*', log: '*', response: '*', request: '*' }]
         }, {
-            module: 'good-console'
+            module: '@hapi/good-console'
         }, 'stdout']
     }
 };
