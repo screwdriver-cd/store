@@ -71,7 +71,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo`
             }).then((response) => {
                 assert.equal(response.statusCode, 404);
@@ -114,7 +115,8 @@ describe('builds plugin test', () => {
                         credentials: {
                             username: mockBuildID,
                             scope: ['user']
-                        } },
+                        }
+                    },
                     url: `/builds/${mockBuildID}/foo`
                 }).then((response) => {
                     assert.equal(response.statusCode, 500);
@@ -142,7 +144,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo.html`
             });
 
@@ -173,7 +176,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo`
             });
 
@@ -202,7 +206,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['build']
-                    } }
+                    }
+                }
             };
         });
 
@@ -246,7 +251,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             });
 
             assert.equal(getResponse.statusCode, 200);
@@ -262,7 +268,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             });
 
             assert.equal(downloadResponse.statusCode, 200);
@@ -287,7 +294,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             });
 
             assert.equal(getResponse.statusCode, 200);
@@ -303,7 +311,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             });
 
             assert.equal(downloadResponse.statusCode, 200);
@@ -327,7 +336,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
@@ -351,7 +361,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } }
+                    }
+                }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
@@ -376,7 +387,8 @@ describe('builds plugin test', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['pipeline']
-                    } }
+                    }
+                }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.result, 'THIS IS A TEST');
@@ -477,7 +489,8 @@ describe('builds plugin test using s3', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo.zip`
             }).then((response) => {
                 assert.calledWith(getDownloadStreamMock, {
@@ -501,7 +514,8 @@ describe('builds plugin test using s3', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['user']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo.zip`
             }).then((response) => {
                 assert.calledWith(getDownloadStreamMock, {
@@ -528,7 +542,8 @@ describe('builds plugin test using s3', () => {
                     credentials: {
                         username: mockBuildID,
                         scope: ['build']
-                    } },
+                    }
+                },
                 url: `/builds/${mockBuildID}/foo.zip`
             };
         });
@@ -547,7 +562,8 @@ describe('builds plugin test using s3', () => {
                     strategy: 'token',
                     credentials: {
                         scope: ['user']
-                    } }
+                    }
+                }
             }).then((getResponse) => {
                 assert.equal(getResponse.statusCode, 204);
                 assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
