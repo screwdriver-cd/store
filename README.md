@@ -1,5 +1,5 @@
 # Artifact Store
-[![Version][npm-image]][npm-url] [![Pulls][docker-pulls]][docker-url] [![Stars][docker-stars]][docker-url] [![Build Status][status-image]][status-url] [![Open Issues][issues-image]][issues-url] [![Dependency Status][daviddm-image]][daviddm-url] [![Vulnerabilities][vul-image]][vul-url] ![License][license-image]
+[![Version][npm-image]][npm-url] [![Pulls][docker-pulls]][docker-url] [![Stars][docker-stars]][docker-url] [![Build Status][status-image]][status-url] [![Open Issues][issues-image]][issues-url] [![Vulnerabilities][vul-image]][vul-url] ![License][license-image]
 
 > Pluggable Artifact Store (for logs, shared steps, templates, etc).
 
@@ -95,5 +95,3 @@ Code licensed under the BSD 3-Clause license. See LICENSE file for terms.
 [issues-url]: https://github.com/screwdriver-cd/screwdriver/issues
 [status-image]: https://cd.screwdriver.cd/pipelines/24/badge
 [status-url]: https://cd.screwdriver.cd/pipelines/24
-[daviddm-image]: https://david-dm.org/screwdriver-cd/store.svg?theme=shields.io
-[daviddm-url]: https://david-dm.org/screwdriver-cd/store
