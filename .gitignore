@@ -6,5 +6,5 @@ npm-debug.log
 config/local.*
 .nyc_output
 package-lock.json
-
+store-data/
 .idea/
