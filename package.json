@@ -75,7 +75,7 @@
     "cheerio": "^1.0.0-rc.3",
     "config": "^1.30.0",
     "hapi-auth-jwt2": "^10.1.0",
-    "hapi-swagger": "^13.0.2",
+    "hapi-swagger": "^14.0.0",
     "joi": "^17.2.0",
     "mime-types": "^2.1.25",
     "request": "^2.88.0",
