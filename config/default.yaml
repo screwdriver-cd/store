@@ -72,8 +72,8 @@ strategy:
         forcePathStyle: false
         # aws-sdk options for the size in bytes for each individual part to be uploaded.
         partSize: 5242880 # default 5mb
-        # the default ACL for putting objects in your s3 bucket
-        ACL: 'public-read'
+        # AWS s3 object ACL should be "private" by default, unless "public-read" otherwise
+        ACL: private
         # default http timeout in ms, default 20s
         httpTimeout: 20000
 
