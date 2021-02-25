@@ -11,11 +11,11 @@ function getMimeFromFileExtension(fileExtension) {
     return mime.lookup(fileExtension) || '';
 }
 
-const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg'];
-const displableMimes = ['text/html'];
+const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json'];
+const displayableMimes = ['text/html'];
 
 module.exports = {
     getMimeFromFileExtension,
-    displableMimes,
+    displayableMimes,
     knownMimes
 };

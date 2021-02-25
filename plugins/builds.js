@@ -8,7 +8,7 @@ const cheerio = require('cheerio');
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
-const { getMimeFromFileExtension, displableMimes, knownMimes } = require('../helpers/mime');
+const { getMimeFromFileExtension, displayableMimes, knownMimes } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -103,7 +103,7 @@ exports.plugin = {
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview') {
-                    if (displableMimes.includes(mime)) {
+                    if (displayableMimes.includes(mime)) {
                         const $ = cheerio.load(Buffer.from(value));
                         const scriptNode = `<script>${iframeScript}</script>`;
 
