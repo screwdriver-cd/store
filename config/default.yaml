@@ -57,8 +57,6 @@ strategy:
     memory:
         # Upper limit on the number of bytes that can be stored in the cache
         maxByteSize: 1073741824 # 1GB
-        # Basically, always set this to true
-        allowMixedContent: true
     s3:
         # Amazon access key
         accessKeyId: null
