@@ -44,7 +44,7 @@ jobs:
             DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
             K8S_IMAGE: screwdrivercd/store
-            K8S_HOST: kubernetes
+            K8S_HOST: kubernetes.default.svc
             K8S_DEPLOYMENT: sdstore-beta
             SD_STORE: beta.store.screwdriver.cd
         secrets:
@@ -64,7 +64,7 @@ jobs:
             DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
             K8S_IMAGE: screwdrivercd/store
-            K8S_HOST: kubernetes
+            K8S_HOST: kubernetes.default.svc
             K8S_DEPLOYMENT: sdstore
             SD_STORE: store.screwdriver.cd
         secrets:
