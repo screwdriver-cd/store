@@ -158,6 +158,35 @@ class AwsClient {
     }
 
     /**
+     * Upload command as Stream
+     * @method uploadCmdAsStream
+     * @param {Object}             config                Config object
+     * @param {Buffer}              config.payload       Payload to upload
+     * @param {String}              config.objectKey       Path to Object
+     * @return {Promise}
+     */
+    uploadCmdAsStream({ payload, objectKey }) {
+        // stream the data to s3
+        const passthrough = new stream.PassThrough();
+        const params = {
+            Bucket: this.bucket,
+            Key: `${this.segment}/${objectKey}`,
+            ContentType: 'application/octet-stream',
+            Body: passthrough
+        };
+        const options = {
+            partSize: this.partSize
+        };
+        const rStream = new stream.Readable();
+
+        rStream.push(payload);
+        rStream.push(null);
+        rStream.pipe(passthrough);
+
+        return this.client.upload(params, options).promise();
+    }
+
+    /**
      * Get download stream
      * @method getDownloadStream
      * @param {Object}             config                Config object
@@ -193,6 +222,19 @@ class AwsClient {
                 });
 
             return s3stream;
+        });
+    }
+
+    deleteObject(object, callback) {
+        const params = {
+            Bucket: this.bucket,
+            Key: `${this.segment}/${object}`
+        };
+
+        return this.client.deleteObject(params, (err) => {
+            if (err) return callback(err);
+
+            return callback();
         });
     }
 }
