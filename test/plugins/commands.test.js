@@ -5,6 +5,7 @@ const sinon = require('sinon');
 const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
 const CatboxMemory = require('@hapi/catbox-memory');
+const Boom = require('@hapi/boom');
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -14,6 +15,7 @@ describe('commands plugin test', () => {
     const mockCommandVersion = '1.2.3';
     let plugin;
     let server;
+    let configMock;
 
     before(() => {
         mockery.enable({
@@ -23,6 +25,14 @@ describe('commands plugin test', () => {
     });
 
     beforeEach(async () => {
+        configMock = {
+            get: sinon.stub()
+                .returns({
+                    plugin: 'memory'
+                })
+        };
+        mockery.registerMock('config', configMock);
+
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/commands');
 
@@ -34,7 +44,6 @@ describe('commands plugin test', () => {
             },
             port: 1234
         });
-
         server.auth.scheme('custom', () => ({
             authenticate: (request, h) => h.authenticated()
         }));
@@ -272,5 +281,239 @@ describe('commands plugin test', () => {
                 });
             });
         }));
+    });
+});
+describe('commands plugin test using s3', () => {
+    const mockCommandNamespace = 'foo';
+    const mockCommandName = 'bar';
+    const mockCommandVersion = '1.2.3';
+    let plugin;
+    let server;
+    let awsClientMock;
+    let configMock;
+    let getDownloadStreamMock;
+    let uploadAsStreamMock;
+    let deleteObjMock;
+    let getDownloadMock;
+    let uploadDirectMock;
+    let data;
+
+    before(() => {
+        mockery.enable({
+            useCleanCache: true,
+            warnOnUnregistered: false
+        });
+    });
+
+    beforeEach(() => {
+        configMock = {
+            get: sinon.stub()
+                .returns({
+                    plugin: 's3',
+                    s3: {}
+                })
+        };
+        getDownloadStreamMock = sinon.stub()
+            .resolves(null);
+        uploadAsStreamMock = sinon.stub()
+            .resolves(null);
+        deleteObjMock = sinon.stub()
+            .resolves(null);
+        getDownloadMock = sinon.stub()
+            .resolves(null);
+        uploadDirectMock = sinon.stub()
+            .resolves(null);
+
+        awsClientMock = sinon.stub()
+            .returns({
+                updateLastModified: sinon.stub()
+                    .yields(null),
+                deleteObject: deleteObjMock,
+                getDownloadStream: getDownloadStreamMock,
+                uploadCmdAsStream: uploadAsStreamMock,
+                getObject: getDownloadMock,
+                uploadObject: uploadDirectMock
+            });
+
+        data = {
+            c: { data: 'test' }, h: { contentType: 'application/json', response: {} }
+        };
+
+        mockery.registerMock('../helpers/aws', awsClientMock);
+        mockery.registerMock('config', configMock);
+
+        // eslint-disable-next-line global-require
+        plugin = require('../../plugins/commands');
+
+        server = Hapi.server({
+            port: 1234
+        });
+        server.auth.scheme('custom', () => ({
+            authenticate: (request, h) => h.authenticated()
+        }));
+        server.auth.strategy('token', 'custom');
+        server.auth.strategy('session', 'custom');
+
+        return server.register({ plugin })
+            .then(() => server.start());
+    });
+
+    afterEach(async () => {
+        await server.stop();
+        server = null;
+        mockery.deregisterAll();
+        mockery.resetCache();
+    });
+
+    after(() => {
+        mockery.disable();
+    });
+
+    it('registers the plugin', () => {
+        assert.isOk(server.registrations.commands);
+    });
+
+    describe('GET /commands/:namespace/:name/:version', () => {
+        it('returns 200 if found', () => {
+            const resp = Object.create(data);
+
+            getDownloadMock.resolves(resp);
+
+            return server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
+                },
+                url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+            })
+                .then((response) => {
+                    assert.calledWith(getDownloadMock, {
+                        // eslint-disable-next-line max-len
+                        objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
+                    });
+                    assert.equal(response.statusCode, 200);
+                });
+        });
+
+        it('returns 404 if not found', () => {
+            getDownloadMock.throws(Boom.boomify(new Error('Not found'), {
+                statusCode: 404
+            }));
+
+            return server.inject({
+                headers: {
+                    'x-foo': 'bar'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
+                },
+                url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+            })
+                .then((response) => {
+                    assert.calledWith(getDownloadMock, {
+                        // eslint-disable-next-line max-len
+                        objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
+                    });
+                    assert.equal(response.statusCode, 404);
+                });
+        });
+    });
+
+    describe('POST /commands/:namespace/:name/:version', () => {
+        let options;
+
+        beforeEach(() => {
+            options = {
+                method: 'POST',
+                payload: 'THIS IS A TEST',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['build'],
+                        pipelineId: 123
+                    }
+                }
+            };
+        });
+
+        it('returns 403 if wrong `cred`s', () => {
+            options.url = '/commands/foo/bar/1.2.3';
+            options.auth.credentials.scope = ['user'];
+
+            return server.inject(options).then((response) => {
+                assert.equal(response.statusCode, 403);
+            });
+        });
+
+        it('saves an artifact', async () => {
+            const resp = Object.create(data);
+
+            options.url = `/commands/${mockCommandNamespace}/`
+                + `${mockCommandName}/${mockCommandVersion}`;
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+
+            getDownloadMock.resolves(resp);
+
+            return server.inject({
+                url: `/commands/${mockCommandNamespace}/`
+                    + `${mockCommandName}/${mockCommandVersion}`,
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
+                }
+            }).then((getResponse) => {
+                assert.equal(getResponse.statusCode, 200);
+                assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
+                assert.isNotOk(getResponse.headers.ignore);
+            });
+        });
+    });
+
+    describe('DELETE /caches/:scope/:id', () => {
+        let deleteOptions;
+
+        beforeEach(() => {
+            deleteOptions = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    'content-type': 'text/plain',
+                    ignore: 'true'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        scope: ['user']
+                    }
+                },
+                url: `/commands/${mockCommandNamespace}/foo/1.2.5`
+            };
+        });
+
+        it('Returns 200 if successfully invalidate cache', () => {
+            deleteObjMock.yields(null);
+
+            return server.inject(deleteOptions).then((deleteResponse) => {
+                assert.equal(deleteResponse.statusCode, 204);
+            });
+        });
     });
 });

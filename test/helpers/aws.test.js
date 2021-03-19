@@ -1,6 +1,6 @@
 'use strict';
 
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const crypto = require('crypto');
@@ -16,6 +16,7 @@ describe('aws helper test', () => {
     const region = 'TEST_REGION';
     const s3ForcePathStyle = 'false';
     const cacheKey = 'test';
+    const objectKey = 'test';
     const testBucket = 'TEST_REGION';
     const localCache = 'THIS IS A TEST';
     const partSize = 10 * 1024 * 1024;
@@ -54,6 +55,7 @@ describe('aws helper test', () => {
         clientMock.prototype.upload = sinon.stub().returns({
             promise: sinon.stub().resolves(null)
         });
+        clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(null);
 
         sdkMock = {
             S3: clientMock
@@ -147,6 +149,17 @@ describe('aws helper test', () => {
         });
     });
 
+    it('returns err if fails to deleteObject', (done) => {
+        const err = new Error('failed to run deleteObjects');
+
+        clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
+
+        return awsClient.deleteObject(objectKey, (e) => {
+            assert.deepEqual(e, err);
+            done();
+        });
+    });
+
     it('uploads data as stream', () => {
         const uploadParam = {
             Bucket: testBucket,
@@ -157,6 +170,25 @@ describe('aws helper test', () => {
         };
 
         return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() })
+            .then(() => {
+                assert.calledWith(clientMock.prototype.upload,
+                    sinon.match(uploadParam),
+                    sinon.match(uploadOption));
+            });
+    });
+
+    it('upload commands directly', () => {
+        awsClient.segment = 'commands';
+        const uploadParam = {
+            Bucket: testBucket,
+            Key: `commands/${objectKey}`
+        };
+        const uploadOption = {
+            partSize
+        };
+
+        // eslint-disable-next-line new-cap
+        return awsClient.uploadObject({ payload: new Buffer.alloc(10), objectKey })
             .then(() => {
                 assert.calledWith(clientMock.prototype.upload,
                     sinon.match(uploadParam),
@@ -180,6 +212,40 @@ describe('aws helper test', () => {
                 assert.calledWith(clientMock.prototype.getObject, getParam);
                 assert.isTrue(data instanceof TestStream);
             });
+    });
+
+    it('return error if getDownload fails to fetch', function () {
+        const err = new Error('Fetch request failed');
+
+        clientMock.prototype.getObject = sinon.stub().yieldsAsync(err, '');
+
+        return awsClient.getObject({ objectKey })
+            .catch(error => assert.equal(error.message, err.message));
+    });
+
+    it('try downloading command', function () {
+        const value = '{ "data2": "test string" }';
+        const data = {
+            Body: value,
+            contentType: 'application/json'
+        };
+
+        const resp = Object.create(data);
+
+        clientMock.prototype.getObject = sinon.stub().yields(null, resp);
+
+        return awsClient.getObject({ objectKey })
+            .then(result => expect(result).have.property('data2', 'test string'))
+        ;
+    });
+
+    it('returns error if return command is not JSON', function () {
+        const err = new Error('Fetch request failed');
+
+        clientMock.prototype.getObject = sinon.stub().yields(err);
+
+        return awsClient.getObject({ objectKey })
+            .then(() => Promise.reject(err), e => assert.instanceOf(e, Error));
     });
 
     it('rejects with a boom object if getObject request failed', () => {

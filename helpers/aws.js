@@ -158,6 +158,43 @@ class AwsClient {
     }
 
     /**
+     * Upload object directly
+     * @method uploadObject
+     * @param {Object}              config               Config object
+     * @param {Object}              config.payload       Payload to upload
+     * @param {String}              config.objectKey       Path to Object
+     * @return {Promise}
+     */
+    uploadObject({ payload, objectKey }) {
+        const now = new Date();
+        const metadata = {
+            stored: now.toString()
+        };
+        let type = 'application/octet-stream';
+        let prettyPayload;
+
+        try {
+            prettyPayload = JSON.stringify(payload);
+            type = 'application/json';
+        } catch (e) {
+            return Promise.reject(new Error('Could not convert object to JSON'));
+        }
+        const params = {
+            Bucket: this.bucket,
+            Key: `${this.segment}/${objectKey}`,
+            ContentType: type,
+            Metadata: metadata,
+            Body: prettyPayload
+        };
+
+        const options = {
+            partSize: this.partSize
+        };
+
+        return this.client.upload(params, options).promise();
+    }
+
+    /**
      * Get download stream
      * @method getDownloadStream
      * @param {Object}             config                Config object
@@ -193,6 +230,63 @@ class AwsClient {
                 });
 
             return s3stream;
+        });
+    }
+
+    /**
+     * Get download
+     * @method getObject
+     * @param {Object}             config                Config object
+     * @param {String}              config.objectKey       Path to cache
+     * @param {Promise}                                   Resolve with a stream if request succeeds, reject with boom object
+     */
+    getObject({ objectKey }) {
+        // get an object from s3
+        const params = {
+            Bucket: this.bucket,
+            Key: this.getStoragePathForKey(objectKey)
+        };
+
+        return new Promise((resolve, reject) => {
+            this.client.getObject(params, (err, data) => {
+                if (err) {
+                    const status = parseInt(err.code, 10);
+
+                    logger.error(`Fetch ${objectKey} request failed: ${err}`);
+                    const error = new Error('Fetch request failed');
+
+                    return reject(Boom.boomify(error, { statusCode: status }));
+                }
+                try {
+                    data.Body = JSON.parse(data.Body);
+
+                    return resolve(data.Body);
+                } catch (e) {
+                    logger.error(`Fetch ${objectKey} request failed: ${e}`);
+                    const error = new Error('Failed to parse the data from s3');
+
+                    return reject(Boom.boomify(error));
+                }
+            });
+        });
+    }
+
+    /**
+     * Delete s3 object
+     * @method deleteObject
+     * @param {String}              object       object name
+     * @param {Function}            callback        callback function
+     */
+    deleteObject(object, callback) {
+        const params = {
+            Bucket: this.bucket,
+            Key: `${this.segment}/${object}`
+        };
+
+        return this.client.deleteObject(params, (err) => {
+            if (err) return callback(err);
+
+            return callback();
         });
     }
 }
