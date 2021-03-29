@@ -16,6 +16,7 @@ describe('aws helper test', () => {
     const region = 'TEST_REGION';
     const s3ForcePathStyle = 'false';
     const cacheKey = 'test';
+    const objectKey = 'test';
     const testBucket = 'TEST_REGION';
     const localCache = 'THIS IS A TEST';
     const partSize = 10 * 1024 * 1024;
@@ -54,6 +55,7 @@ describe('aws helper test', () => {
         clientMock.prototype.upload = sinon.stub().returns({
             promise: sinon.stub().resolves(null)
         });
+        clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(null);
 
         sdkMock = {
             S3: clientMock
@@ -147,6 +149,17 @@ describe('aws helper test', () => {
         });
     });
 
+    it('returns err if fails to deleteObject', (done) => {
+        const err = new Error('failed to run deleteObjects');
+
+        clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
+
+        return awsClient.deleteObject(objectKey, (e) => {
+            assert.deepEqual(e, err);
+            done();
+        });
+    });
+
     it('uploads data as stream', () => {
         const uploadParam = {
             Bucket: testBucket,
@@ -157,6 +170,25 @@ describe('aws helper test', () => {
         };
 
         return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() })
+            .then(() => {
+                assert.calledWith(clientMock.prototype.upload,
+                    sinon.match(uploadParam),
+                    sinon.match(uploadOption));
+            });
+    });
+
+    it('uploads command as stream', () => {
+        awsClient.segment = 'commands';
+        const uploadParam = {
+            Bucket: testBucket,
+            Key: `commands/${cacheKey}`
+        };
+        const uploadOption = {
+            partSize
+        };
+
+        // eslint-disable-next-line new-cap
+        return awsClient.uploadCmdAsStream({ payload: new Buffer.alloc(10), objectKey })
             .then(() => {
                 assert.calledWith(clientMock.prototype.upload,
                     sinon.match(uploadParam),

@@ -167,12 +167,12 @@ class AwsClient {
      */
     uploadCmdAsStream({ payload, objectKey }) {
         // stream the data to s3
-        const passthrough = new stream.PassThrough();
+        const passThrough = new stream.PassThrough();
         const params = {
             Bucket: this.bucket,
             Key: `${this.segment}/${objectKey}`,
             ContentType: 'application/octet-stream',
-            Body: passthrough
+            Body: passThrough
         };
         const options = {
             partSize: this.partSize
@@ -181,7 +181,7 @@ class AwsClient {
 
         rStream.push(payload);
         rStream.push(null);
-        rStream.pipe(passthrough);
+        rStream.pipe(passThrough);
 
         return this.client.upload(params, options).promise();
     }
@@ -225,6 +225,12 @@ class AwsClient {
         });
     }
 
+    /**
+     * Delete s3 object
+     * @method deleteObject
+     * @param {String}              object       object name
+     * @param {Function}            callback        callback function
+     */
     deleteObject(object, callback) {
         const params = {
             Bucket: this.bucket,

@@ -67,14 +67,8 @@ exports.plugin = {
                     if (!value) {
                         throw boom.notFound();
                     }
-
-                    if (value.c) {
-                        response = h.response(Buffer.from(value.c.data));
-                        response.headers = value.h;
-                    } else {
-                        response = h.response(Buffer.from(value));
-                        response.headers['content-type'] = 'text/plain';
-                    }
+                    response = h.response(Buffer.from(value.c.data));
+                    response.headers = value.h;
                 }
 
                 return response;
@@ -124,23 +118,18 @@ exports.plugin = {
                 request.log([pipelineId], `Saving command of ${name} of size ${size} `
                     + `bytes with headers ${JSON.stringify(contents.h)}`);
 
-                if (usingS3) {
-                    try {
+                try {
+                    if (usingS3) {
                         await awsClient.uploadCmdAsStream({
                             payload,
                             objectKey: id
                         });
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to create command: ${err}`);
-                        throw boom.serverUnavailable(err.message, err);
-                    }
-                } else {
-                    try {
+                    } else {
                         await cache.set(id, contents, 0);
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
-                        throw boom.serverUnavailable(err.message, err);
                     }
+                } catch (err) {
+                    request.log([id, 'error'], `Failed to create command: ${err}`);
+                    throw boom.serverUnavailable(err.message, err);
                 }
 
                 return h.response().code(202);
@@ -177,8 +166,8 @@ exports.plugin = {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
 
-                if (usingS3) {
-                    try {
+                try {
+                    if (usingS3) {
                         await awsClient.deleteObject(id, (err) => {
                             if (err) {
                                 throw err;
@@ -187,22 +176,14 @@ exports.plugin = {
                         request.log([id, 'info'], 'Successfully deleted a command');
 
                         return h.response().code(204);
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to delete a command: ${err}`);
-
-                        throw boom.serverUnavailable(err.message, err);
                     }
-                } else {
-                    try {
-                        await cache.drop(id);
-                        request.log([id, 'info'], 'Successfully deleted a command');
+                    await cache.drop(id);
+                    request.log([id, 'info'], 'Successfully deleted a command');
 
-                        return h.response().code(204);
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to delete a command: ${err}`);
-
-                        throw boom.serverUnavailable(err.message, err);
-                    }
+                    return h.response().code(204);
+                } catch (err) {
+                    request.log([id, 'error'], `Failed to delete a command: ${err}`);
+                    throw boom.serverUnavailable(err.message, err);
                 }
             },
             options: {
