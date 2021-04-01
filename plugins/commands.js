@@ -8,6 +8,8 @@ const SCHEMA_COMMAND_NAME = schema.config.command.name;
 const SCHEMA_COMMAND_VERSION = schema.config.command.version;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
+const config = require('config');
+const AwsClient = require('../helpers/aws');
 
 exports.plugin = {
     name: 'commands',
@@ -21,6 +23,15 @@ exports.plugin = {
      * @param  {Integer}  options.maxByteSize   Maximum Bytes to accept
      */
     register(server, options) {
+        const segment = 'commands';
+        const strategyConfig = config.get('strategy');
+        const usingS3 = strategyConfig.plugin === 's3';
+        let awsClient;
+
+        if (usingS3) {
+            strategyConfig.s3.segment = segment;
+            awsClient = new AwsClient(strategyConfig.s3);
+        }
         const cache = server.cache({
             segment: 'commands',
             expiresIn: parseInt(options.expiresInSec, 10) || DEFAULT_TTL
@@ -34,22 +45,31 @@ exports.plugin = {
             handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
-
+                let response;
                 let value;
 
-                try {
-                    value = await cache.get(id);
-                } catch (err) {
-                    throw err;
+                if (usingS3) {
+                    try {
+                        value = await awsClient.getDownloadStream({ cacheKey: id });
+                        response = h.response(value);
+                        response.headers['content-type'] = 'application/octet-stream';
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to stream the s3: ${err}`);
+                        throw err;
+                    }
+                } else {
+                    try {
+                        value = await cache.get(id);
+                    } catch (err) {
+                        throw err;
+                    }
+
+                    if (!value) {
+                        throw boom.notFound();
+                    }
+                    response = h.response(Buffer.from(value.c.data));
+                    response.headers = value.h;
                 }
-
-                if (!value) {
-                    throw boom.notFound();
-                }
-
-                const response = h.response(Buffer.from(value.c.data));
-
-                response.headers = value.h;
 
                 return response;
             },
@@ -81,6 +101,7 @@ exports.plugin = {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
+                const payload = request.payload;
                 const contents = {
                     c: request.payload,
                     h: {}
@@ -98,10 +119,16 @@ exports.plugin = {
                     + `bytes with headers ${JSON.stringify(contents.h)}`);
 
                 try {
-                    await cache.set(id, contents, 0);
+                    if (usingS3) {
+                        await awsClient.uploadCmdAsStream({
+                            payload,
+                            objectKey: id
+                        });
+                    } else {
+                        await cache.set(id, contents, 0);
+                    }
                 } catch (err) {
-                    request.log([id, 'error'], `Failed to store in cache: ${err}`);
-
+                    request.log([id, 'error'], `Failed to create command: ${err}`);
                     throw boom.serverUnavailable(err.message, err);
                 }
 
@@ -140,13 +167,22 @@ exports.plugin = {
                 const id = `${namespace}-${name}-${version}`;
 
                 try {
+                    if (usingS3) {
+                        await awsClient.deleteObject(id, (err) => {
+                            if (err) {
+                                throw err;
+                            }
+                        });
+                        request.log([id, 'info'], 'Successfully deleted a command');
+
+                        return h.response().code(204);
+                    }
                     await cache.drop(id);
                     request.log([id, 'info'], 'Successfully deleted a command');
 
                     return h.response().code(204);
                 } catch (err) {
                     request.log([id, 'error'], `Failed to delete a command: ${err}`);
-
                     throw boom.serverUnavailable(err.message, err);
                 }
             },
