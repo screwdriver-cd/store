@@ -45,16 +45,13 @@ exports.plugin = {
             handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
-                let response;
                 let value;
 
                 if (usingS3) {
                     try {
-                        value = await awsClient.getDownloadStream({ cacheKey: id });
-                        response = h.response(value);
-                        response.headers['content-type'] = 'application/octet-stream';
+                        value = await awsClient.getObject({ objectKey: id });
                     } catch (err) {
-                        request.log([id, 'error'], `Failed to stream the s3: ${err}`);
+                        request.log([id, 'error'], `Failed to fetch from s3: ${err}`);
                         throw err;
                     }
                 } else {
@@ -67,9 +64,11 @@ exports.plugin = {
                     if (!value) {
                         throw boom.notFound();
                     }
-                    response = h.response(Buffer.from(value.c.data));
-                    response.headers = value.h;
                 }
+
+                const response = h.response(Buffer.from(value.c.data));
+
+                response.headers = value.h;
 
                 return response;
             },
@@ -101,7 +100,6 @@ exports.plugin = {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
-                const payload = request.payload;
                 const contents = {
                     c: request.payload,
                     h: {}
@@ -120,10 +118,7 @@ exports.plugin = {
 
                 try {
                     if (usingS3) {
-                        await awsClient.uploadCmdAsStream({
-                            payload,
-                            objectKey: id
-                        });
+                        await awsClient.uploadObject({ payload: contents, objectKey: id });
                     } else {
                         await cache.set(id, contents, 0);
                     }
