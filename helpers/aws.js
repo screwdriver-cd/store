@@ -272,7 +272,6 @@ class AwsClient {
     }
 
     /**
-
      * Delete s3 object
      * @method deleteObject
      * @param {String}              object       object name
