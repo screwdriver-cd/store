@@ -65,7 +65,6 @@ exports.plugin = {
                         throw boom.notFound();
                     }
                 }
-              
                 const response = h.response(Buffer.from(value.c.data));
 
                 response.headers = value.h;
@@ -100,7 +99,6 @@ exports.plugin = {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
-                const payload = request.payload;
                 const contents = {
                     c: request.payload,
                     h: {}

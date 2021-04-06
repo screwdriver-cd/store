@@ -469,7 +469,7 @@ describe('commands plugin test using s3', () => {
             assert.equal(putResponse.statusCode, 202);
 
             getDownloadMock.resolves(resp);
-          
+
             return server.inject({
                 url: `/commands/${mockCommandNamespace}/`
                     + `${mockCommandName}/${mockCommandVersion}`,
