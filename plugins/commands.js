@@ -66,10 +66,6 @@ exports.plugin = {
                     }
                 }
 
-                const response = h.response(Buffer.from(value.c.data));
-
-                response.headers = value.h;
-
                 return response;
             },
             options: {
@@ -100,6 +96,7 @@ exports.plugin = {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
+                const payload = request.payload;
                 const contents = {
                     c: request.payload,
                     h: {}

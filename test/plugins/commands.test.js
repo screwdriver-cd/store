@@ -298,6 +298,7 @@ describe('commands plugin test using s3', () => {
     let uploadDirectMock;
     let data;
 
+
     before(() => {
         mockery.enable({
             useCleanCache: true,
@@ -324,6 +325,7 @@ describe('commands plugin test using s3', () => {
         uploadDirectMock = sinon.stub()
             .resolves(null);
 
+
         awsClientMock = sinon.stub()
             .returns({
                 updateLastModified: sinon.stub()
@@ -338,7 +340,6 @@ describe('commands plugin test using s3', () => {
         data = {
             c: { data: 'test' }, h: { contentType: 'application/json', response: {} }
         };
-
         mockery.registerMock('../helpers/aws', awsClientMock);
         mockery.registerMock('config', configMock);
 
@@ -460,7 +461,6 @@ describe('commands plugin test using s3', () => {
 
         it('saves an artifact', async () => {
             const resp = Object.create(data);
-
             options.url = `/commands/${mockCommandNamespace}/`
                 + `${mockCommandName}/${mockCommandVersion}`;
 
