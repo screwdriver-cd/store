@@ -328,11 +328,11 @@ describe('commands plugin test using s3', () => {
             .returns({
                 updateLastModified: sinon.stub()
                     .yields(null),
-                deleteObject: deleteObjMock,
+                removeObject: deleteObjMock,
                 getDownloadStream: getDownloadStreamMock,
                 uploadCmdAsStream: uploadAsStreamMock,
-                getObject: getDownloadMock,
-                uploadObject: uploadDirectMock
+                getDownloadObject: getDownloadMock,
+                uploadAsBuffer: uploadDirectMock
             });
 
         data = {

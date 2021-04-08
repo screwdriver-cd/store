@@ -45,11 +45,12 @@ exports.plugin = {
             handler: async (request, h) => {
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
+                let response;
                 let value;
 
                 if (usingS3) {
                     try {
-                        value = await awsClient.getObject({ objectKey: id });
+                        value = await awsClient.getDownloadObject({ objectKey: id });
                     } catch (err) {
                         request.log([id, 'error'], `Failed to fetch from s3: ${err}`);
                         throw err;
@@ -65,9 +66,14 @@ exports.plugin = {
                         throw boom.notFound();
                     }
                 }
-                const response = h.response(Buffer.from(value.c.data));
 
-                response.headers = value.h;
+                if (value.c) {
+                    response = h.response(Buffer.from(value.c.data));
+                    response.headers = value.h;
+                } else {
+                    response = h.response(Buffer.from(value));
+                    response.headers['content-type'] = 'application/octet-stream';
+                }
 
                 return response;
             },
@@ -117,7 +123,7 @@ exports.plugin = {
 
                 try {
                     if (usingS3) {
-                        await awsClient.uploadObject({ payload: contents, objectKey: id });
+                        await awsClient.uploadAsBuffer({ payload: contents, objectKey: id });
                     } else {
                         await cache.set(id, contents, 0);
                     }
@@ -162,7 +168,7 @@ exports.plugin = {
 
                 try {
                     if (usingS3) {
-                        await awsClient.deleteObject(id, (err) => {
+                        await awsClient.removeObject(id, (err) => {
                             if (err) {
                                 throw err;
                             }

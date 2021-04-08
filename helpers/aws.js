@@ -159,32 +159,30 @@ class AwsClient {
 
     /**
      * Upload object directly
-     * @method uploadObject
+     * @method uploadAsBuffer
      * @param {Object}              config               Config object
      * @param {Object}              config.payload       Payload to upload
      * @param {String}              config.objectKey       Path to Object
      * @return {Promise}
      */
-    uploadObject({ payload, objectKey }) {
+    uploadAsBuffer({ payload, objectKey }) {
         const now = new Date();
         const metadata = {
-            stored: now.toString()
+            stored: now.toString(),
+            'sd-store-lib': 'aws'
         };
         let type = 'application/octet-stream';
-        let prettyPayload;
 
-        try {
-            prettyPayload = JSON.stringify(payload);
-            type = 'application/json';
-        } catch (e) {
-            return Promise.reject(new Error('Could not convert object to JSON'));
+        if (payload.h) {
+            type = payload.h['content-type'];
         }
+
         const params = {
             Bucket: this.bucket,
             Key: `${this.segment}/${objectKey}`,
             ContentType: type,
             Metadata: metadata,
-            Body: prettyPayload
+            Body: payload.c
         };
 
         const options = {
@@ -235,12 +233,12 @@ class AwsClient {
 
     /**
      * Get download
-     * @method getObject
+     * @method getDownloadObject
      * @param {Object}             config                Config object
      * @param {String}              config.objectKey       Path to cache
      * @param {Promise}                                   Resolve with a stream if request succeeds, reject with boom object
      */
-    getObject({ objectKey }) {
+    getDownloadObject({ objectKey }) {
         // get an object from s3
         const params = {
             Bucket: this.bucket,
@@ -257,27 +255,23 @@ class AwsClient {
 
                     return reject(Boom.boomify(error, { statusCode: status }));
                 }
-                try {
-                    data.Body = JSON.parse(data.Body);
-
+                if ('sd-store-lib' in data.Metadata) {
                     return resolve(data.Body);
-                } catch (e) {
-                    logger.error(`Fetch ${objectKey} request failed: ${e}`);
-                    const error = new Error('Failed to parse the data from s3');
-
-                    return reject(Boom.boomify(error));
                 }
+                data.Body = JSON.parse(data.Body);
+
+                return resolve(data.Body);
             });
         });
     }
 
     /**
      * Delete s3 object
-     * @method deleteObject
+     * @method removeObject
      * @param {String}              object       object name
      * @param {Function}            callback        callback function
      */
-    deleteObject(object, callback) {
+    removeObject(object, callback) {
         const params = {
             Bucket: this.bucket,
             Key: `${this.segment}/${object}`

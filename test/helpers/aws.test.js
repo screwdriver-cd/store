@@ -154,7 +154,7 @@ describe('aws helper test', () => {
 
         clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.deleteObject(objectKey, (e) => {
+        return awsClient.removeObject(objectKey, (e) => {
             assert.deepEqual(e, err);
             done();
         });
@@ -188,7 +188,7 @@ describe('aws helper test', () => {
         };
 
         // eslint-disable-next-line new-cap
-        return awsClient.uploadObject({ payload: new Buffer.alloc(10), objectKey })
+        return awsClient.uploadAsBuffer({ payload: Buffer.from('hello world', 'utf8'), objectKey })
             .then(() => {
                 assert.calledWith(clientMock.prototype.upload,
                     sinon.match(uploadParam),
@@ -219,7 +219,7 @@ describe('aws helper test', () => {
 
         clientMock.prototype.getObject = sinon.stub().yieldsAsync(err, '');
 
-        return awsClient.getObject({ objectKey })
+        return awsClient.getDownloadObject({ objectKey })
             .catch(error => assert.equal(error.message, err.message));
     });
 
@@ -227,14 +227,15 @@ describe('aws helper test', () => {
         const value = '{ "data2": "test string" }';
         const data = {
             Body: value,
-            contentType: 'application/json'
+            contentType: 'application/json',
+            Metadata: {}
         };
 
         const resp = Object.create(data);
 
         clientMock.prototype.getObject = sinon.stub().yields(null, resp);
 
-        return awsClient.getObject({ objectKey })
+        return awsClient.getDownloadObject({ objectKey })
             .then(result => expect(result).have.property('data2', 'test string'))
         ;
     });
@@ -244,7 +245,7 @@ describe('aws helper test', () => {
 
         clientMock.prototype.getObject = sinon.stub().yields(err);
 
-        return awsClient.getObject({ objectKey })
+        return awsClient.getDownloadObject({ objectKey })
             .then(() => Promise.reject(err), e => assert.instanceOf(e, Error));
     });
 
