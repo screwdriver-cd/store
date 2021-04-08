@@ -50,11 +50,9 @@ exports.plugin = {
 
                 if (usingS3) {
                     try {
-                        value = await awsClient.getDownloadStream({ cacheKey: id });
-                        response = h.response(value);
-                        response.headers['content-type'] = 'application/octet-stream';
+                        value = await awsClient.getDownloadObject({ objectKey: id });
                     } catch (err) {
-                        request.log([id, 'error'], `Failed to stream the s3: ${err}`);
+                        request.log([id, 'error'], `Failed to fetch from s3: ${err}`);
                         throw err;
                     }
                 } else {
@@ -67,8 +65,14 @@ exports.plugin = {
                     if (!value) {
                         throw boom.notFound();
                     }
+                }
+
+                if (value.c) {
                     response = h.response(Buffer.from(value.c.data));
                     response.headers = value.h;
+                } else {
+                    response = h.response(Buffer.from(value));
+                    response.headers['content-type'] = 'application/octet-stream';
                 }
 
                 return response;
@@ -101,7 +105,6 @@ exports.plugin = {
                 const { pipelineId } = request.auth.credentials;
                 const { namespace, name, version } = request.params;
                 const id = `${namespace}-${name}-${version}`;
-                const payload = request.payload;
                 const contents = {
                     c: request.payload,
                     h: {}
@@ -120,10 +123,7 @@ exports.plugin = {
 
                 try {
                     if (usingS3) {
-                        await awsClient.uploadCmdAsStream({
-                            payload,
-                            objectKey: id
-                        });
+                        await awsClient.uploadAsBuffer({ payload: contents, objectKey: id });
                     } else {
                         await cache.set(id, contents, 0);
                     }
@@ -168,7 +168,7 @@ exports.plugin = {
 
                 try {
                     if (usingS3) {
-                        await awsClient.deleteObject(id, (err) => {
+                        await awsClient.removeObject(id, (err) => {
                             if (err) {
                                 throw err;
                             }

@@ -15,6 +15,7 @@ describe('commands plugin test', () => {
     const mockCommandVersion = '1.2.3';
     let plugin;
     let server;
+    let configMock;
 
     before(() => {
         mockery.enable({
@@ -24,6 +25,14 @@ describe('commands plugin test', () => {
     });
 
     beforeEach(async () => {
+        configMock = {
+            get: sinon.stub()
+                .returns({
+                    plugin: 'memory'
+                })
+        };
+        mockery.registerMock('config', configMock);
+
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/commands');
 
@@ -35,7 +44,6 @@ describe('commands plugin test', () => {
             },
             port: 1234
         });
-
         server.auth.scheme('custom', () => ({
             authenticate: (request, h) => h.authenticated()
         }));
@@ -286,6 +294,9 @@ describe('commands plugin test using s3', () => {
     let getDownloadStreamMock;
     let uploadAsStreamMock;
     let deleteObjMock;
+    let getDownloadMock;
+    let uploadDirectMock;
+    let data;
 
     before(() => {
         mockery.enable({
@@ -308,15 +319,25 @@ describe('commands plugin test using s3', () => {
             .resolves(null);
         deleteObjMock = sinon.stub()
             .resolves(null);
+        getDownloadMock = sinon.stub()
+            .resolves(null);
+        uploadDirectMock = sinon.stub()
+            .resolves(null);
 
         awsClientMock = sinon.stub()
             .returns({
                 updateLastModified: sinon.stub()
                     .yields(null),
-                deleteObject: deleteObjMock,
+                removeObject: deleteObjMock,
                 getDownloadStream: getDownloadStreamMock,
-                uploadCmdAsStream: uploadAsStreamMock
+                uploadCmdAsStream: uploadAsStreamMock,
+                getDownloadObject: getDownloadMock,
+                uploadAsBuffer: uploadDirectMock
             });
+
+        data = {
+            c: { data: 'test' }, h: { contentType: 'application/json', response: {} }
+        };
 
         mockery.registerMock('../helpers/aws', awsClientMock);
         mockery.registerMock('config', configMock);
@@ -353,8 +374,12 @@ describe('commands plugin test using s3', () => {
     });
 
     describe('GET /commands/:namespace/:name/:version', () => {
-        it('returns 204 if found', () => (
-            server.inject({
+        it('returns 200 if found', () => {
+            const resp = Object.create(data);
+
+            getDownloadMock.resolves(resp);
+
+            return server.inject({
                 headers: {
                     'x-foo': 'bar'
                 },
@@ -367,15 +392,16 @@ describe('commands plugin test using s3', () => {
                 url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
             })
                 .then((response) => {
-                    assert.calledWith(getDownloadStreamMock, {
-                        cacheKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
+                    assert.calledWith(getDownloadMock, {
+                        // eslint-disable-next-line max-len
+                        objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
                     });
-                    assert.equal(response.statusCode, 204);
-                })
-        ));
+                    assert.equal(response.statusCode, 200);
+                });
+        });
 
         it('returns 404 if not found', () => {
-            getDownloadStreamMock.rejects(Boom.boomify(new Error('Not found'), {
+            getDownloadMock.throws(Boom.boomify(new Error('Not found'), {
                 statusCode: 404
             }));
 
@@ -392,8 +418,9 @@ describe('commands plugin test using s3', () => {
                 url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
             })
                 .then((response) => {
-                    assert.calledWith(getDownloadStreamMock, {
-                        cacheKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
+                    assert.calledWith(getDownloadMock, {
+                        // eslint-disable-next-line max-len
+                        objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
                     });
                     assert.equal(response.statusCode, 404);
                 });
@@ -432,12 +459,16 @@ describe('commands plugin test using s3', () => {
         });
 
         it('saves an artifact', async () => {
+            const resp = Object.create(data);
+
             options.url = `/commands/${mockCommandNamespace}/`
                 + `${mockCommandName}/${mockCommandVersion}`;
 
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
+
+            getDownloadMock.resolves(resp);
 
             return server.inject({
                 url: `/commands/${mockCommandNamespace}/`
@@ -449,7 +480,7 @@ describe('commands plugin test using s3', () => {
                     }
                 }
             }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 204);
+                assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
                 assert.isNotOk(getResponse.headers.ignore);
             });

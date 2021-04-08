@@ -1,6 +1,6 @@
 'use strict';
 
-const { assert } = require('chai');
+const { assert, expect } = require('chai');
 const mockery = require('mockery');
 const sinon = require('sinon');
 const crypto = require('crypto');
@@ -154,7 +154,7 @@ describe('aws helper test', () => {
 
         clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.deleteObject(objectKey, (e) => {
+        return awsClient.removeObject(objectKey, (e) => {
             assert.deepEqual(e, err);
             done();
         });
@@ -177,18 +177,18 @@ describe('aws helper test', () => {
             });
     });
 
-    it('uploads command as stream', () => {
+    it('upload commands directly', () => {
         awsClient.segment = 'commands';
         const uploadParam = {
             Bucket: testBucket,
-            Key: `commands/${cacheKey}`
+            Key: `commands/${objectKey}`
         };
         const uploadOption = {
             partSize
         };
 
         // eslint-disable-next-line new-cap
-        return awsClient.uploadCmdAsStream({ payload: new Buffer.alloc(10), objectKey })
+        return awsClient.uploadAsBuffer({ payload: Buffer.from('hello world', 'utf8'), objectKey })
             .then(() => {
                 assert.calledWith(clientMock.prototype.upload,
                     sinon.match(uploadParam),
@@ -212,6 +212,41 @@ describe('aws helper test', () => {
                 assert.calledWith(clientMock.prototype.getObject, getParam);
                 assert.isTrue(data instanceof TestStream);
             });
+    });
+
+    it('return error if getDownload fails to fetch', function () {
+        const err = new Error('Fetch request failed');
+
+        clientMock.prototype.getObject = sinon.stub().yieldsAsync(err, '');
+
+        return awsClient.getDownloadObject({ objectKey })
+            .catch(error => assert.equal(error.message, err.message));
+    });
+
+    it('try downloading command', function () {
+        const value = '{ "data2": "test string" }';
+        const data = {
+            Body: value,
+            contentType: 'application/json',
+            Metadata: {}
+        };
+
+        const resp = Object.create(data);
+
+        clientMock.prototype.getObject = sinon.stub().yields(null, resp);
+
+        return awsClient.getDownloadObject({ objectKey })
+            .then(result => expect(result).have.property('data2', 'test string'))
+        ;
+    });
+
+    it('returns error if return command is not JSON', function () {
+        const err = new Error('Fetch request failed');
+
+        clientMock.prototype.getObject = sinon.stub().yields(err);
+
+        return awsClient.getDownloadObject({ objectKey })
+            .then(() => Promise.reject(err), e => assert.instanceOf(e, Error));
     });
 
     it('rejects with a boom object if getObject request failed', () => {

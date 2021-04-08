@@ -158,30 +158,36 @@ class AwsClient {
     }
 
     /**
-     * Upload command as Stream
-     * @method uploadCmdAsStream
-     * @param {Object}             config                Config object
-     * @param {Buffer}              config.payload       Payload to upload
+     * Upload object directly
+     * @method uploadAsBuffer
+     * @param {Object}              config               Config object
+     * @param {Object}              config.payload       Payload to upload
      * @param {String}              config.objectKey       Path to Object
      * @return {Promise}
      */
-    uploadCmdAsStream({ payload, objectKey }) {
-        // stream the data to s3
-        const passThrough = new stream.PassThrough();
+    uploadAsBuffer({ payload, objectKey }) {
+        const now = new Date();
+        const metadata = {
+            stored: now.toString(),
+            'sd-store-lib': 'aws'
+        };
+        let type = 'application/octet-stream';
+
+        if (payload.h) {
+            type = payload.h['content-type'];
+        }
+
         const params = {
             Bucket: this.bucket,
             Key: `${this.segment}/${objectKey}`,
-            ContentType: 'application/octet-stream',
-            Body: passThrough
+            ContentType: type,
+            Metadata: metadata,
+            Body: payload.c
         };
+
         const options = {
             partSize: this.partSize
         };
-        const rStream = new stream.Readable();
-
-        rStream.push(payload);
-        rStream.push(null);
-        rStream.pipe(passThrough);
 
         return this.client.upload(params, options).promise();
     }
@@ -226,12 +232,46 @@ class AwsClient {
     }
 
     /**
+     * Get download
+     * @method getDownloadObject
+     * @param {Object}             config                Config object
+     * @param {String}              config.objectKey       Path to cache
+     * @param {Promise}                                   Resolve with a stream if request succeeds, reject with boom object
+     */
+    getDownloadObject({ objectKey }) {
+        // get an object from s3
+        const params = {
+            Bucket: this.bucket,
+            Key: this.getStoragePathForKey(objectKey)
+        };
+
+        return new Promise((resolve, reject) => {
+            this.client.getObject(params, (err, data) => {
+                if (err) {
+                    const status = parseInt(err.code, 10);
+
+                    logger.error(`Fetch ${objectKey} request failed: ${err}`);
+                    const error = new Error('Fetch request failed');
+
+                    return reject(Boom.boomify(error, { statusCode: status }));
+                }
+                if ('sd-store-lib' in data.Metadata) {
+                    return resolve(data.Body);
+                }
+                data.Body = JSON.parse(data.Body);
+
+                return resolve(data.Body);
+            });
+        });
+    }
+
+    /**
      * Delete s3 object
-     * @method deleteObject
+     * @method removeObject
      * @param {String}              object       object name
      * @param {Function}            callback        callback function
      */
-    deleteObject(object, callback) {
+    removeObject(object, callback) {
         const params = {
             Bucket: this.bucket,
             Key: `${this.segment}/${object}`
