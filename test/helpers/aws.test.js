@@ -64,7 +64,7 @@ describe('aws helper test', () => {
         mockery.registerMock('aws-sdk', sdkMock);
 
         // eslint-disable-next-line global-require
-        AwsClient = require('../../helpers/aws.js');
+        AwsClient = require('../../helpers/aws');
         awsClient = new AwsClient({
             accessKeyId,
             secretAccessKey,
