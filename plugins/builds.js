@@ -60,7 +60,7 @@ exports.plugin = {
                 let response;
 
                 // for old json files, the value is hidden in an object, we cannot stream it directly
-                if (usingS3 && id.endsWith('.zip')) {
+                if (usingS3) {
                     try {
                         value = await awsClient.getDownloadStream({ cacheKey: id });
                         response = h.response(value);
