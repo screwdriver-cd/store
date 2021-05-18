@@ -11,7 +11,8 @@ function getMimeFromFileExtension(fileExtension) {
     return mime.lookup(fileExtension) || '';
 }
 
-const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json'];
+const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',
+    'text/plain', 'application/xml'];
 const displayableMimes = ['text/html'];
 
 module.exports = {
