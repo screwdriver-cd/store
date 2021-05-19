@@ -14,6 +14,7 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('builds plugin test', () => {
     let plugin;
     let server;
+    let configMock;
 
     before(() => {
         mockery.enable({
@@ -23,6 +24,13 @@ describe('builds plugin test', () => {
     });
 
     beforeEach(() => {
+        configMock = {
+            get: sinon.stub().returns({
+                plugin: 'memory',
+                s3: {}
+            })
+        };
+        mockery.registerMock('config', configMock);
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/builds');
 

@@ -58,6 +58,7 @@ exports.plugin = {
 
                 let value;
                 let response;
+                let isStreamOutput = false;
 
                 // for old json files, the value is hidden in an object, we cannot stream it directly
                 if (usingS3) {
@@ -65,6 +66,7 @@ exports.plugin = {
                         value = await awsClient.getDownloadStream({ cacheKey: id });
                         response = h.response(value);
                         response.headers['content-type'] = 'application/octet-stream';
+                        isStreamOutput = true;
                     } catch (err) {
                         request.log([id, 'error'], `Failed to stream the cache: ${err}`);
                         throw err;
@@ -104,7 +106,14 @@ exports.plugin = {
                         `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview') {
                     if (displayableMimes.includes(mime)) {
-                        const $ = cheerio.load(Buffer.from(value));
+                        let htmlContent;
+
+                        if (isStreamOutput) {
+                            htmlContent = await streamToBuffer(value);
+                        } else {
+                            htmlContent = Buffer.from(value);
+                        }
+                        const $ = cheerio.load(htmlContent);
                         const scriptNode = `<script>${iframeScript}</script>`;
 
                         // inject postMessage into code
