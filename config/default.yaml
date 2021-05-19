@@ -62,6 +62,8 @@ strategy:
         accessKeyId: null
         # Amazon secret access key
         secretAccessKey: null
+        # Amazon Session Token from federated credentials
+        sessionToken: null
         # Amazon S3 region
         region: YOUR-REGION
         # Amazon S3 bucket that you have write access to

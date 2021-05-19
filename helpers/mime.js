@@ -14,7 +14,7 @@ const FORCE_EXTENSION_MAPPING = {
  * @return {String} text/html
  */
 function getMimeFromFileExtension(fileExtension) {
-    return mime.lookup(fileExtension) || mime.lookup(FORCE_EXTENSION_MAPPING[fileExtension]) || '';
+    return mime.lookup(FORCE_EXTENSION_MAPPING[fileExtension] || fileExtension) || '';
 }
 
 const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',
