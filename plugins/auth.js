@@ -36,7 +36,7 @@ exports.plugin = {
             key: pluginOptions.jwtPublicKey,
             verifyOptions: {
                 algorithms: ['RS256'],
-                maxAge: '12h'
+                maxAge: '13h'
             },
             // This function is run once the Token has been decoded with signature
             validate

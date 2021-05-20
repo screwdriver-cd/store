@@ -2,13 +2,19 @@
 
 const mime = require('mime-types');
 
+const FORCE_EXTENSION_MAPPING = {
+    yidf: 'txt',
+    state: 'txt',
+    diff: 'txt'
+};
+
 /**
  * getMimeFromFileExtension
  * @param  {String} fileExtension  File extension (e.g. css, txt, html)
  * @return {String} text/html
  */
 function getMimeFromFileExtension(fileExtension) {
-    return mime.lookup(fileExtension) || '';
+    return mime.lookup(FORCE_EXTENSION_MAPPING[fileExtension] || fileExtension) || '';
 }
 
 const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',

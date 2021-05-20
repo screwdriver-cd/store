@@ -47,7 +47,7 @@ async function init() {
 
         return logger.info('Server running at %s', server.info.uri);
     } catch (err) {
-        logger.error(err);
+        logger.error(err.toString());
 
         return process.exit(1);
     }

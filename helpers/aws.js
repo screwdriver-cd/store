@@ -19,6 +19,7 @@ class AwsClient {
      * @param  {String}    config.segment            S3 segment
      * @param  {Integer}   config.partSize           aws-sdk upload option
      * @param  {Integer}   config.httpTimeout        HTTP timeout in ms
+     * @param  {String }   config.sessionToken       Session token for federated AWS login
      */
     constructor(config) {
         const options = {
@@ -30,6 +31,10 @@ class AwsClient {
                 timeout: +config.httpTimeout
             }
         };
+
+        if (config.sessionToken) {
+            options.sessionToken = config.sessionToken;
+        }
 
         if (config.endpoint) {
             options.endpoint = config.endpoint;
