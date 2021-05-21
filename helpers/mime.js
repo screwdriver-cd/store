@@ -5,7 +5,8 @@ const mime = require('mime-types');
 const FORCE_EXTENSION_MAPPING = {
     yidf: 'txt',
     state: 'txt',
-    diff: 'txt'
+    diff: 'txt',
+    xml: 'txt' // FIXME: Chrome is not displaying xml files
 };
 
 /**
