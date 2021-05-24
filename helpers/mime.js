@@ -6,7 +6,6 @@ const FORCE_EXTENSION_MAPPING = {
     yidf: 'txt',
     state: 'txt',
     diff: 'txt',
-    yaml: 'txt',
     xml: 'txt' // FIXME: Chrome is not displaying xml files
 };
 
@@ -20,7 +19,7 @@ function getMimeFromFileExtension(fileExtension) {
 }
 
 const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',
-    'text/plain', 'application/xml'];
+    'text/plain', 'application/xml', 'text/yaml'];
 const displayableMimes = ['text/html'];
 
 module.exports = {
