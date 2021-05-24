@@ -6,6 +6,7 @@ const FORCE_EXTENSION_MAPPING = {
     yidf: 'txt',
     state: 'txt',
     diff: 'txt',
+    yaml: 'txt',
     xml: 'txt' // FIXME: Chrome is not displaying xml files
 };
 
