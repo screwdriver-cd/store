@@ -8,7 +8,7 @@ const cheerio = require('cheerio');
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
-const { getMimeFromFileName, displayableMimes, knownMimes } = require('../helpers/mime');
+const { getMimeFromFileName, displayableMimes } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
@@ -65,7 +65,6 @@ exports.plugin = {
                     try {
                         value = await awsClient.getDownloadStream({ cacheKey: id });
                         response = h.response(value);
-                        response.headers['content-type'] = 'application/octet-stream';
                         isStreamOutput = true;
                     } catch (err) {
                         request.log([id, 'error'], `Failed to stream the cache: ${err}`);
@@ -101,7 +100,7 @@ exports.plugin = {
 
                 // only if the artifact is requested as downloadable item
                 if (request.query.type === 'download') {
-                    // let browser sniff for the correct filename w/ extension
+                    response.headers['content-type'] = 'application/octet-stream';
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview') {
@@ -120,8 +119,11 @@ exports.plugin = {
                         $('body').append(scriptNode);
                         response = h.response($.html());
                         response.headers['content-type'] = mime;
-                    } else if (knownMimes.includes(mime)) {
-                        response.headers['content-type'] = mime;
+                    } else {
+                        // let browser sniff from the filename
+                        response.headers['content-type'] = '';
+                        response.headers['content-disposition'] =
+                        `inline; filename="${encodeURI(fileName)}"`;
                     }
                 }
 
