@@ -97,7 +97,7 @@ exports.plugin = {
 
                 const fileName = artifact.split('/').pop();
                 const fileExt = fileName.split('.').pop();
-                const mime = getMimeFromFileExtension(fileExt);
+                const mime = getMimeFromFileExtension(fileExt, fileName);
 
                 // only if the artifact is requested as downloadable item
                 if (request.query.type === 'download') {
