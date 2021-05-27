@@ -27,12 +27,13 @@ const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
 ];
 
 /**
- * getMimeFromFileExtension
+ * Get MIME types from file name and file extension
+ * @method getMimeFromFileName
  * @param  {String} fileExtension  File extension (e.g. css, txt, html)
  * @param  {String} fileName       File name      (e.g. dockerfile, main)
  * @return {String} MIME Type      eg. text/html, text/plain
  */
-function getMimeFromFileExtension(fileExtension, fileName = '') {
+function getMimeFromFileName(fileExtension, fileName = '') {
     if (KNOWN_FILE_NAMES_IN_TEXT_FORMAT.includes(fileName.toLowerCase())) {
         return 'text/plain';
     }
@@ -49,7 +50,7 @@ const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'a
 const displayableMimes = ['text/html'];
 
 module.exports = {
-    getMimeFromFileExtension,
+    getMimeFromFileName,
     displayableMimes,
     knownMimes
 };
