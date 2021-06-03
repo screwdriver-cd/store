@@ -97,7 +97,7 @@ exports.plugin = {
 
                 const fileName = artifact.split('/').pop();
                 const fileExt = fileName.split('.').pop();
-                const mime = getMimeFromFileExtension(fileExt);
+                const mime = getMimeFromFileExtension(fileExt, fileName);
 
                 // only if the artifact is requested as downloadable item
                 if (request.query.type === 'download') {
@@ -120,7 +120,7 @@ exports.plugin = {
                         $('body').append(scriptNode);
                         response = h.response($.html());
                         response.headers['content-type'] = mime;
-                    } else if (knownMimes.includes(mime)) {
+                    } else if (mime) {
                         response.headers['content-type'] = mime;
                     }
                 }
