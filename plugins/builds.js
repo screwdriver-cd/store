@@ -8,7 +8,7 @@ const cheerio = require('cheerio');
 const AwsClient = require('../helpers/aws');
 const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
-const { getMimeFromFileExtension, displayableMimes, knownMimes } = require('../helpers/mime');
+const { getMimeFromFileExtension, displayableMimes } = require('../helpers/mime');
 
 const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
