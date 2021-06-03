@@ -3,12 +3,9 @@
 const mime = require('mime-types');
 
 mime.types.xml = 'text/xml';
-
-const FORCE_EXTENSION_MAPPING = {
-    yidf: 'txt',
-    state: 'txt',
-    diff: 'txt'
-};
+['yidf', 'state', 'diff'].forEach((ext) => {
+    mime.types[ext] = 'text/plain';
+});
 
 /**
  * getMimeFromFileExtension
@@ -21,7 +18,7 @@ function getMimeFromFileExtension(fileExtension, fileName = '') {
         return 'text/plain';
     }
 
-    return mime.lookup(FORCE_EXTENSION_MAPPING[fileExtension] || fileExtension) || '';
+    return mime.lookup(fileExtension) || '';
 }
 
 const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',
