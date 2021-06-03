@@ -14,6 +14,7 @@ const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
     'java',
     'lua',
     'pl',
+    'go',
     'py',
     'tox',
     'env',
@@ -23,6 +24,7 @@ const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
     'yidf',
     'state',
     'diff',
+    'deps',
     'xml'
 ];
 

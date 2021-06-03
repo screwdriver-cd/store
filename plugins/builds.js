@@ -86,17 +86,10 @@ exports.plugin = {
                         response.headers = value.h;
                     } else {
                         response = h.response(Buffer.from(value));
-                        response.headers['content-type'] = 'text/plain';
-                    }
-
-                    if (id.endsWith('.html')) {
-                        response.headers['content-type'] = 'text/html';
                     }
                 }
 
                 const fileName = artifact.split('/').pop();
-                const fileExt = fileName.split('.').pop();
-                const mime = getMimeFromFileName(fileExt, fileName);
 
                 // only if the artifact is requested as downloadable item
                 if (request.query.type === 'download') {
@@ -104,6 +97,11 @@ exports.plugin = {
                     response.headers['content-disposition'] =
                         `attachment; filename="${encodeURI(fileName)}"`;
                 } else if (request.query.type === 'preview') {
+                    const fileExt = fileName.split('.').pop();
+                    const mime = getMimeFromFileName(fileExt, fileName);
+
+                    response.headers['content-type'] = mime;
+
                     if (displayableMimes.includes(mime)) {
                         let htmlContent;
 
@@ -118,10 +116,7 @@ exports.plugin = {
                         // inject postMessage into code
                         $('body').append(scriptNode);
                         response = h.response($.html());
-                        response.headers['content-type'] = mime;
                     } else {
-                        // let browser sniff from the filename
-                        response.headers['content-type'] = '';
                         response.headers['content-disposition'] =
                         `inline; filename="${encodeURI(fileName)}"`;
                     }
