@@ -2,28 +2,53 @@
 
 const mime = require('mime-types');
 
-const FORCE_EXTENSION_MAPPING = {
-    yidf: 'txt',
-    state: 'txt',
-    diff: 'txt',
-    xml: 'txt' // FIXME: Chrome is not displaying xml files
-};
+const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
+    'js',
+    'c',
+    'cpp',
+    'cs',
+    'dtd',
+    'h',
+    'm',
+    'java',
+    'lua',
+    'pl',
+    'go',
+    'py',
+    'tox',
+    'env',
+    'sh',
+    'vb',
+    'swift',
+    'yidf',
+    'state',
+    'diff',
+    'deps',
+    'xml'
+];
 
 /**
- * getMimeFromFileExtension
+ * Get MIME types from file name and file extension
+ * @method getMimeFromFileName
  * @param  {String} fileExtension  File extension (e.g. css, txt, html)
- * @return {String} text/html
+ * @param  {String} fileName       File name      (e.g. dockerfile, main)
+ * @return {String} MIME Type      eg. text/html, text/plain
  */
-function getMimeFromFileExtension(fileExtension) {
-    return mime.lookup(FORCE_EXTENSION_MAPPING[fileExtension] || fileExtension) || '';
+function getMimeFromFileName(fileExtension, fileName = '') {
+    if (fileName.toLowerCase().endsWith('file')) {
+        return 'text/plain';
+    }
+
+    if (KNOWN_FILE_EXTS_IN_TEXT_FORMAT.includes(fileExtension.toLowerCase())) {
+        return 'text/plain';
+    }
+
+    return mime.lookup(fileExtension) || '';
 }
 
-const knownMimes = ['text/css', 'text/javascript', 'image/png', 'image/jpeg', 'application/json',
-    'text/plain', 'application/xml', 'text/yaml'];
 const displayableMimes = ['text/html'];
 
 module.exports = {
-    getMimeFromFileExtension,
-    displayableMimes,
-    knownMimes
+    getMimeFromFileName,
+    displayableMimes
 };

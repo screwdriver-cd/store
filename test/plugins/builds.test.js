@@ -1,12 +1,13 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { assert } = require('chai');
 const sinon = require('sinon');
 const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
 const CatboxMemory = require('@hapi/catbox-memory');
 const Boom = require('@hapi/boom');
-
 const mockBuildID = 1899999;
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -135,6 +136,8 @@ describe('builds plugin test', () => {
         it('type=preview ending with html', async () => {
             const id = `${mockBuildID}-foo.html`;
             const content = 'HELLO WORLD';
+            const htmlContent = fs
+                .readFileSync(path.join(__dirname, './data/helloworld.html'), 'utf8');
             const cache = server.cache({
                 segment: 'builds',
                 expiresIn: 100,
@@ -154,14 +157,15 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     }
                 },
-                url: `/builds/${mockBuildID}/foo.html`
+                url: `/builds/${mockBuildID}/foo.html?type=preview`
             });
 
             assert.equal(getResponse.statusCode, 200);
             assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
             assert.isNotOk(getResponse.headers['x-foo']);
             assert.isNotOk(getResponse.headers.ignore);
-            assert.equal(getResponse.result, content);
+            assert.equal(getResponse.result, htmlContent);
+            assert.isOk(getResponse.result.includes(content));
         });
 
         it('type=preview not ending with html', async () => {
@@ -186,11 +190,11 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     }
                 },
-                url: `/builds/${mockBuildID}/foo`
+                url: `/builds/${mockBuildID}/foo?type=preview`
             });
 
             assert.equal(getResponse.statusCode, 200);
-            assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+            assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
             assert.isNotOk(getResponse.headers['x-foo']);
             assert.isNotOk(getResponse.headers.ignore);
             assert.equal(getResponse.result, content);
@@ -337,7 +341,7 @@ describe('builds plugin test', () => {
 
             assert.equal(putResponse.statusCode, 202);
 
-            return server.inject({
+            const getResponse = await server.inject({
                 url: `/builds/${mockBuildID}/foo`,
                 auth: {
                     strategy: 'token',
@@ -346,13 +350,13 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     }
                 }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
-                assert.isNotOk(getResponse.headers['x-foo']);
-                assert.isNotOk(getResponse.headers.ignore);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
             });
+
+            assert.equal(getResponse.statusCode, 200);
+            assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
+            assert.isNotOk(getResponse.headers['x-foo']);
+            assert.isNotOk(getResponse.headers.ignore);
+            assert.equal(getResponse.result, 'THIS IS A TEST');
         });
 
         it('saves an html artifact without headers for text/html type', async () => {
@@ -362,8 +366,8 @@ describe('builds plugin test', () => {
 
             assert.equal(putResponse.statusCode, 202);
 
-            return server.inject({
-                url: `/builds/${mockBuildID}/foo.html`,
+            const downloadResponse = await server.inject({
+                url: `/builds/${mockBuildID}/foo.html?type=download`,
                 auth: {
                     strategy: 'token',
                     credentials: {
@@ -371,13 +375,30 @@ describe('builds plugin test', () => {
                         scope: ['user']
                     }
                 }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'text/html; charset=utf-8');
-                assert.isNotOk(getResponse.headers['x-foo']);
-                assert.isNotOk(getResponse.headers.ignore);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
             });
+
+            assert.equal(downloadResponse.statusCode, 200);
+            assert.equal(downloadResponse.headers['content-type'], 'application/octet-stream');
+            assert.isNotOk(downloadResponse.headers['x-foo']);
+            assert.isNotOk(downloadResponse.headers.ignore);
+            assert.equal(downloadResponse.result, 'THIS IS A TEST');
+
+            const previewResponse = await server.inject({
+                url: `/builds/${mockBuildID}/foo.html?type=preview`,
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['user']
+                    }
+                }
+            });
+
+            assert.equal(previewResponse.statusCode, 200);
+            assert.equal(previewResponse.headers['content-type'], 'text/html; charset=utf-8');
+            assert.isNotOk(previewResponse.headers['x-foo']);
+            assert.isNotOk(previewResponse.headers.ignore);
+            assert.isOk(previewResponse.result.includes('THIS IS A TEST'));
         });
 
         it('saves an artifact and fetches it with pipeline scoped jwt', async () => {
@@ -564,20 +585,20 @@ describe('builds plugin test using s3', () => {
                 cacheKey: `${mockBuildID}-foo.zip`
             }));
 
-            return server.inject({
-                url: options.url,
+            const downloadResponse = await server.inject({
+                url: `${options.url}?type=download`,
                 auth: {
                     strategy: 'token',
                     credentials: {
                         scope: ['user']
                     }
                 }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 204);
-                assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
-                assert.isNotOk(getResponse.headers['x-foo']);
-                assert.isNotOk(getResponse.headers.ignore);
             });
+
+            assert.equal(downloadResponse.statusCode, 204);
+            assert.equal(downloadResponse.headers['content-type'], 'application/octet-stream');
+            assert.isNotOk(downloadResponse.headers['x-foo']);
+            assert.isNotOk(downloadResponse.headers.ignore);
         });
 
         it('returns 503 if streaming failed', async () => {
