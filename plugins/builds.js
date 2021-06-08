@@ -63,8 +63,13 @@ exports.plugin = {
                 // for old json files, the value is hidden in an object, we cannot stream it directly
                 if (usingS3) {
                     try {
-                        value = await awsClient.getDownloadStream({ cacheKey: id });
+                        const { s3Stream, s3Headers } =
+                            await awsClient.getDownloadStream({ cacheKey: id });
+
+                        value = s3Stream;
+
                         response = h.response(value);
+                        response.headers['content-length'] = s3Headers['content-length'];
                         isStreamOutput = true;
                     } catch (err) {
                         request.log([id, 'error'], `Failed to stream the cache: ${err}`);

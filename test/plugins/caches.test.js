@@ -784,7 +784,7 @@ describe('caches plugin test using s3', () => {
             })
         };
 
-        getDownloadStreamMock = sinon.stub().resolves(null);
+        getDownloadStreamMock = sinon.stub().resolves({ s3Stream: {}, s3Headers: {} });
         uploadAsStreamMock = sinon.stub().resolves(null);
         invalidateCacheMock = sinon.stub().yields(null);
 
@@ -842,7 +842,7 @@ describe('caches plugin test using s3', () => {
     });
 
     describe('GET /caches/events/:id/:cacheName', () => {
-        it('returns 204', () => (
+        it('returns 200', () => (
             server.inject({
                 headers: {
                     'x-foo': 'bar'
@@ -859,7 +859,7 @@ describe('caches plugin test using s3', () => {
                 assert.calledWith(getDownloadStreamMock, {
                     cacheKey: `events/${mockEventID}/foo.zip`
                 });
-                assert.equal(response.statusCode, 204);
+                assert.equal(response.statusCode, 200);
             })
         ));
 
@@ -928,7 +928,7 @@ describe('caches plugin test using s3', () => {
                     }
                 }
             }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 204);
+                assert.equal(getResponse.statusCode, 200);
                 assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
                 assert.isNotOk(getResponse.headers['x-foo']);
                 assert.isNotOk(getResponse.headers.ignore);
