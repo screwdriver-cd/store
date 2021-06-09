@@ -213,10 +213,9 @@ class AwsClient {
 
         return new Promise((resolve, reject) => {
             const req = this.client.getObject(params);
-            let s3stream;
 
             // check the header before returning a stream, if request failed, reject
-            req.on('httpHeaders', (statusCode) => {
+            const s3Stream = req.on('httpHeaders', (statusCode, headers) => {
                 if (statusCode >= 400) {
                     logger.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
                     const error = new Error('Fetch cache request failed');
@@ -224,15 +223,11 @@ class AwsClient {
                     return reject(Boom.boomify(error, { statusCode }));
                 }
 
-                return resolve(s3stream);
-            });
-
-            s3stream = req.createReadStream()
+                return resolve({ s3Stream, s3Headers: headers });
+            }).createReadStream()
                 .on('error', (error) => {
                     logger.error(`Error streaming ${cacheKey}: ${error}`);
                 });
-
-            return s3stream;
         });
     }
 

@@ -450,7 +450,7 @@ describe('builds plugin test using s3', () => {
             })
         };
 
-        getDownloadStreamMock = sinon.stub().resolves(null);
+        getDownloadStreamMock = sinon.stub().resolves({ s3Stream: {}, s3Headers: {} });
         uploadAsStreamMock = sinon.stub().resolves(null);
 
         awsClientMock = sinon.stub().returns({
@@ -525,7 +525,7 @@ describe('builds plugin test using s3', () => {
                 assert.calledWith(getDownloadStreamMock, {
                     cacheKey: `${mockBuildID}-foo.zip`
                 });
-                assert.equal(response.statusCode, 204);
+                assert.equal(response.statusCode, 200);
             })
         ));
 
@@ -595,7 +595,7 @@ describe('builds plugin test using s3', () => {
                 }
             });
 
-            assert.equal(downloadResponse.statusCode, 204);
+            assert.equal(downloadResponse.statusCode, 200);
             assert.equal(downloadResponse.headers['content-type'], 'application/octet-stream');
             assert.isNotOk(downloadResponse.headers['x-foo']);
             assert.isNotOk(downloadResponse.headers.ignore);

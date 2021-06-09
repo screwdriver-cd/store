@@ -91,7 +91,9 @@ exports.plugin = {
                 // for old json files, the value is hidden in an object, we cannot stream it directly
                 if (usingS3 && cacheName.endsWith('.zip')) {
                     try {
-                        value = await awsClient.getDownloadStream({ cacheKey });
+                        const { s3Stream } = await awsClient.getDownloadStream({ cacheKey });
+
+                        value = s3Stream;
                         response = h.response(value);
                         response.headers['content-type'] = 'application/octet-stream';
                     } catch (err) {

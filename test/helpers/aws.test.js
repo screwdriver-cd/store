@@ -208,7 +208,7 @@ describe('aws helper test', () => {
         }, 0);
 
         return awsClient.getDownloadStream({ cacheKey })
-            .then((data) => {
+            .then(({ s3Stream: data }) => {
                 assert.calledWith(clientMock.prototype.getObject, getParam);
                 assert.isTrue(data instanceof TestStream);
             });
