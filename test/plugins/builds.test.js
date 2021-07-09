@@ -50,8 +50,7 @@ describe('builds plugin test', () => {
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        return server.register({ plugin })
-            .then(() => server.start());
+        return server.register({ plugin }).then(() => server.start());
     });
 
     afterEach(async () => {
@@ -70,23 +69,24 @@ describe('builds plugin test', () => {
     });
 
     describe('GET /builds/:id/:artifact', () => {
-        it('returns 404 if not found', () => (
-            server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    }
-                },
-                url: `/builds/${mockBuildID}/foo`
-            }).then((response) => {
-                assert.equal(response.statusCode, 404);
-            })
-        ));
+        it('returns 404 if not found', () =>
+            server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/foo`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 404);
+                }));
 
         describe('caching is not setup right', () => {
             let badServer;
@@ -114,30 +114,30 @@ describe('builds plugin test', () => {
                 badServer = null;
             });
 
-            it('returns 500 if caching fails', () => (
-                badServer.inject({
-                    headers: {
-                        'x-foo': 'bar'
-                    },
-                    auth: {
-                        strategy: 'token',
-                        credentials: {
-                            username: mockBuildID,
-                            scope: ['user']
-                        }
-                    },
-                    url: `/builds/${mockBuildID}/foo`
-                }).then((response) => {
-                    assert.equal(response.statusCode, 500);
-                })
-            ));
+            it('returns 500 if caching fails', () =>
+                badServer
+                    .inject({
+                        headers: {
+                            'x-foo': 'bar'
+                        },
+                        auth: {
+                            strategy: 'token',
+                            credentials: {
+                                username: mockBuildID,
+                                scope: ['user']
+                            }
+                        },
+                        url: `/builds/${mockBuildID}/foo`
+                    })
+                    .then(response => {
+                        assert.equal(response.statusCode, 500);
+                    }));
         });
 
         it('type=preview ending with html', async () => {
             const id = `${mockBuildID}-foo.html`;
             const content = 'HELLO WORLD';
-            const htmlContent = fs
-                .readFileSync(path.join(__dirname, './data/helloworld.html'), 'utf8');
+            const htmlContent = fs.readFileSync(path.join(__dirname, './data/helloworld.html'), 'utf8');
             const cache = server.cache({
                 segment: 'builds',
                 expiresIn: 100,
@@ -226,7 +226,7 @@ describe('builds plugin test', () => {
         it('returns 403 if wrong creds', () => {
             options.url = '/builds/122222/foo';
 
-            return server.inject(options).then((response) => {
+            return server.inject(options).then(response => {
                 assert.equal(response.statusCode, 403);
             });
         });
@@ -243,7 +243,7 @@ describe('builds plugin test', () => {
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then((response) => {
+            return server.inject(options).then(response => {
                 assert.equal(response.statusCode, 503);
             });
         });
@@ -285,10 +285,7 @@ describe('builds plugin test', () => {
             });
 
             assert.equal(downloadResponse.statusCode, 200);
-            assert.equal(
-                downloadResponse.headers['content-disposition'],
-                'attachment; filename="foo"'
-            );
+            assert.equal(downloadResponse.headers['content-disposition'], 'attachment; filename="foo"');
         });
 
         it('saves an artifact of Japanese filename', async () => {
@@ -409,19 +406,21 @@ describe('builds plugin test', () => {
 
             assert.equal(putResponse.statusCode, 202);
 
-            return server.inject({
-                url: `/builds/${mockBuildID}/foo`,
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['pipeline']
+            return server
+                .inject({
+                    url: `/builds/${mockBuildID}/foo`,
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['pipeline']
+                        }
                     }
-                }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
-            });
+                })
+                .then(getResponse => {
+                    assert.equal(getResponse.statusCode, 200);
+                    assert.equal(getResponse.result, 'THIS IS A TEST');
+                });
         });
     });
 });
@@ -488,8 +487,7 @@ describe('builds plugin test using s3', () => {
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        return server.register({ plugin })
-            .then(() => server.start());
+        return server.register({ plugin }).then(() => server.start());
     });
 
     afterEach(async () => {
@@ -508,50 +506,55 @@ describe('builds plugin test using s3', () => {
     });
 
     describe('GET /builds/:id/:artifact', () => {
-        it('returns 200', () => (
-            server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    }
-                },
-                url: `/builds/${mockBuildID}/foo.zip`
-            }).then((response) => {
-                assert.calledWith(getDownloadStreamMock, {
-                    cacheKey: `${mockBuildID}-foo.zip`
-                });
-                assert.equal(response.statusCode, 200);
-            })
-        ));
+        it('returns 200', () =>
+            server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/foo.zip`
+                })
+                .then(response => {
+                    assert.calledWith(getDownloadStreamMock, {
+                        cacheKey: `${mockBuildID}-foo.zip`
+                    });
+                    assert.equal(response.statusCode, 200);
+                }));
 
         it('returns 404 if not found', () => {
-            getDownloadStreamMock.rejects(Boom.boomify(new Error('Not found'), {
-                statusCode: 404
-            }));
+            getDownloadStreamMock.rejects(
+                Boom.boomify(new Error('Not found'), {
+                    statusCode: 404
+                })
+            );
 
-            return server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        username: mockBuildID,
-                        scope: ['user']
-                    }
-                },
-                url: `/builds/${mockBuildID}/foo.zip`
-            }).then((response) => {
-                assert.calledWith(getDownloadStreamMock, {
-                    cacheKey: `${mockBuildID}-foo.zip`
+            return server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/foo.zip`
+                })
+                .then(response => {
+                    assert.calledWith(getDownloadStreamMock, {
+                        cacheKey: `${mockBuildID}-foo.zip`
+                    });
+                    assert.equal(response.statusCode, 404);
                 });
-                assert.equal(response.statusCode, 404);
-            });
         });
     });
 
@@ -581,9 +584,12 @@ describe('builds plugin test using s3', () => {
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
-            assert.calledWith(uploadAsStreamMock, sinon.match({
-                cacheKey: `${mockBuildID}-foo.zip`
-            }));
+            assert.calledWith(
+                uploadAsStreamMock,
+                sinon.match({
+                    cacheKey: `${mockBuildID}-foo.zip`
+                })
+            );
 
             const downloadResponse = await server.inject({
                 url: `${options.url}?type=download`,
@@ -607,10 +613,12 @@ describe('builds plugin test using s3', () => {
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 503);
-            assert.calledWith(uploadAsStreamMock, sinon.match({
-                cacheKey: `${mockBuildID}-foo.zip`
-            }));
+            assert.calledWith(
+                uploadAsStreamMock,
+                sinon.match({
+                    cacheKey: `${mockBuildID}-foo.zip`
+                })
+            );
         });
     });
 });
-

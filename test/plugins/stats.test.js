@@ -43,10 +43,7 @@ describe('stats plugin test', () => {
             }
         };
 
-        return server.register([
-            mockBuild,
-            plugin
-        ]);
+        return server.register([mockBuild, plugin]);
     });
 
     afterEach(() => {
@@ -64,15 +61,16 @@ describe('stats plugin test', () => {
     });
 
     describe('GET /stats', () => {
-        it('returns 200 with stats', () => (
-            server.inject({
-                url: '/stats'
-            }).then((response) => {
-                assert.equal(response.statusCode, 200);
-                assert.deepEqual(response.result, {
-                    builds: mockStats
-                });
-            })
-        ));
+        it('returns 200 with stats', () =>
+            server
+                .inject({
+                    url: '/stats'
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 200);
+                    assert.deepEqual(response.result, {
+                        builds: mockStats
+                    });
+                }));
     });
 });

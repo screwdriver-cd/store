@@ -3,7 +3,7 @@
 const { assert } = require('chai');
 const Catbox = require('@hapi/catbox-memory');
 
-describe('server case', function () {
+describe('server case', function() {
     // Time not important. Only life important.
     this.timeout(5000);
 
@@ -54,37 +54,40 @@ describe('server case', function () {
                 assert.fail(err);
             }
 
-            return server.inject({
-                method: 'GET',
-                url: '/v1/status',
-                headers: {
-                    origin: ecosystem.ui
-                }
-            }).then((response) => {
-                assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
-                assert.equal(response.statusCode, 200);
-                assert.include(response.request.info.host, '12347');
-            });
+            return server
+                .inject({
+                    method: 'GET',
+                    url: '/v1/status',
+                    headers: {
+                        origin: ecosystem.ui
+                    }
+                })
+                .then(response => {
+                    assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
+                    assert.equal(response.statusCode, 200);
+                    assert.include(response.request.info.host, '12347');
+                });
         });
     });
 
     describe('negative cases', () => {
-        it('fails during registration when no auth is provided', () => hapiEngine({
-            httpd: {
-                port: 12347
-            },
-            cache: {
-                engine: new Catbox()
-            },
-            commands: {},
-            ecosystem
-        })
-            .then(() => {
-                // Error should be thrown; code should not reach here
-                assert.fail('No error thrown');
+        it('fails during registration when no auth is provided', () =>
+            hapiEngine({
+                httpd: {
+                    port: 12347
+                },
+                cache: {
+                    engine: new Catbox()
+                },
+                commands: {},
+                ecosystem
             })
-            .catch((error) => {
-                assert.isOk(error);
-            }));
+                .then(() => {
+                    // Error should be thrown; code should not reach here
+                    assert.fail('No error thrown');
+                })
+                .catch(error => {
+                    assert.isOk(error);
+                }));
     });
 });

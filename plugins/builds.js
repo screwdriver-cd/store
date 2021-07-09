@@ -10,9 +10,15 @@ const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
 const { getMimeFromFileName, displayableMimes } = require('../helpers/mime');
 
-const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
+const SCHEMA_BUILD_ID = joi
+    .number()
+    .integer()
+    .positive()
+    .label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
-const TYPE = joi.string().optional()
+const TYPE = joi
+    .string()
+    .optional()
     .valid('download', 'preview')
     .label('Flag to trigger type either to download or preview');
 const TOKEN = joi.string().label('Auth Token');
@@ -48,200 +54,195 @@ exports.plugin = {
 
         server.expose('stats', cache.stats);
 
-        server.route([{
-            method: 'GET',
-            path: '/builds/{id}/{artifact*}',
-            handler: async (request, h) => {
-                const buildId = request.params.id;
-                const artifact = request.params.artifact;
-                const id = `${buildId}-${artifact}`;
+        server.route([
+            {
+                method: 'GET',
+                path: '/builds/{id}/{artifact*}',
+                handler: async (request, h) => {
+                    const buildId = request.params.id;
+                    const { artifact } = request.params;
+                    const id = `${buildId}-${artifact}`;
 
-                let value;
-                let response;
-                let isStreamOutput = false;
+                    let value;
+                    let response;
+                    let isStreamOutput = false;
 
-                // for old json files, the value is hidden in an object, we cannot stream it directly
-                if (usingS3) {
-                    try {
-                        const { s3Stream, s3Headers } =
-                            await awsClient.getDownloadStream({ cacheKey: id });
+                    // for old json files, the value is hidden in an object, we cannot stream it directly
+                    if (usingS3) {
+                        try {
+                            const { s3Stream, s3Headers } = await awsClient.getDownloadStream({ cacheKey: id });
 
-                        value = s3Stream;
+                            value = s3Stream;
 
-                        response = h.response(value);
-                        response.headers['content-length'] = s3Headers['content-length'];
-                        isStreamOutput = true;
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to stream the cache: ${err}`);
-                        throw err;
-                    }
-                } else {
-                    try {
-                        value = await cache.get(id);
-                    } catch (err) {
-                        throw err;
-                    }
-
-                    if (!value) {
-                        throw boom.notFound();
-                    }
-
-                    if (value.c) {
-                        response = h.response(Buffer.from(value.c.data));
-                        response.headers = value.h;
-                    } else {
-                        response = h.response(Buffer.from(value));
-                    }
-                }
-
-                const fileName = artifact.split('/').pop();
-
-                // only if the artifact is requested as downloadable item
-                if (request.query.type === 'download') {
-                    response.headers['content-type'] = 'application/octet-stream';
-                    response.headers['content-disposition'] =
-                        `attachment; filename="${encodeURI(fileName)}"`;
-                } else if (request.query.type === 'preview') {
-                    const fileExt = fileName.split('.').pop();
-                    const mime = getMimeFromFileName(fileExt, fileName);
-
-                    response.headers['content-type'] = mime;
-
-                    if (displayableMimes.includes(mime)) {
-                        let htmlContent;
-
-                        if (isStreamOutput) {
-                            htmlContent = await streamToBuffer(value);
-                        } else {
-                            htmlContent = Buffer.from(value);
+                            response = h.response(value);
+                            response.headers['content-length'] = s3Headers['content-length'];
+                            isStreamOutput = true;
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to stream the cache: ${err}`);
+                            throw err;
                         }
-                        const $ = cheerio.load(htmlContent);
-                        const scriptNode = `<script>${iframeScript}</script>`;
-
-                        // inject postMessage into code
-                        $('body').append(scriptNode);
-                        response = h.response($.html());
                     } else {
-                        response.headers['content-disposition'] =
-                        `inline; filename="${encodeURI(fileName)}"`;
+                        value = await cache.get(id);
+
+                        if (!value) {
+                            throw boom.notFound();
+                        }
+
+                        if (value.c) {
+                            response = h.response(Buffer.from(value.c.data));
+                            response.headers = value.h;
+                        } else {
+                            response = h.response(Buffer.from(value));
+                        }
+                    }
+
+                    const fileName = artifact.split('/').pop();
+
+                    // only if the artifact is requested as downloadable item
+                    if (request.query.type === 'download') {
+                        response.headers['content-type'] = 'application/octet-stream';
+                        response.headers['content-disposition'] = `attachment; filename="${encodeURI(fileName)}"`;
+                    } else if (request.query.type === 'preview') {
+                        const fileExt = fileName.split('.').pop();
+                        const mime = getMimeFromFileName(fileExt, fileName);
+
+                        response.headers['content-type'] = mime;
+
+                        if (displayableMimes.includes(mime)) {
+                            let htmlContent;
+
+                            if (isStreamOutput) {
+                                htmlContent = await streamToBuffer(value);
+                            } else {
+                                htmlContent = Buffer.from(value);
+                            }
+                            const $ = cheerio.load(htmlContent);
+                            const scriptNode = `<script>${iframeScript}</script>`;
+
+                            // inject postMessage into code
+                            $('body').append(scriptNode);
+                            response = h.response($.html());
+                        } else {
+                            response.headers['content-disposition'] = `inline; filename="${encodeURI(fileName)}"`;
+                        }
+                    }
+
+                    return response;
+                },
+                options: {
+                    description: 'Read build artifacts',
+                    notes: 'Get an artifact from a specific build',
+                    tags: ['api', 'builds'],
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['user', 'pipeline', 'build']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            id: SCHEMA_BUILD_ID,
+                            artifact: SCHEMA_ARTIFACT_ID
+                        }),
+                        query: joi.object({
+                            type: TYPE,
+                            token: TOKEN
+                        })
                     }
                 }
-
-                return response;
             },
-            options: {
-                description: 'Read build artifacts',
-                notes: 'Get an artifact from a specific build',
-                tags: ['api', 'builds'],
-                auth: {
-                    strategies: ['token'],
-                    scope: ['user', 'pipeline', 'build']
-                },
-                plugins: {
-                    'hapi-swagger': {
-                        security: [{ token: [] }]
+            {
+                method: 'PUT',
+                path: '/builds/{id}/{artifact*}',
+                handler: async (request, h) => {
+                    const { username } = request.auth.credentials;
+                    const buildId = request.params.id;
+                    const { artifact } = request.params;
+                    const id = `${buildId}-${artifact}`;
+                    const { payload } = request;
+                    const contents = {
+                        c: payload,
+                        h: {}
+                    };
+
+                    if (username !== buildId) {
+                        return boom.forbidden(`Credential only valid for ${username}`);
                     }
+
+                    // Store all x-* and content-type headers
+                    Object.keys(request.headers).forEach(header => {
+                        if (header.indexOf('x-') === 0 || header === 'content-type') {
+                            contents.h[header] = request.headers[header];
+                        }
+                    });
+
+                    // stream large payload if using s3
+                    if (usingS3) {
+                        try {
+                            await awsClient.uploadAsStream({
+                                payload,
+                                cacheKey: id
+                            });
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to store in cache: ${err}`);
+
+                            throw boom.serverUnavailable(err.message, err);
+                        }
+                    } else {
+                        let value = contents;
+
+                        // convert stream to buffer, otherwise catbox cannot parse
+                        contents.c = await streamToBuffer(payload);
+
+                        // For text/plain payload, upload it as Buffer
+                        // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
+                        // and might create issue on large payload
+                        if (contents.h['content-type'] === 'text/plain') {
+                            value = contents.c;
+                        }
+
+                        request.log(buildId, `Saving ${artifact} with headers ${JSON.stringify(contents.h)}`);
+
+                        try {
+                            await cache.set(id, value, 0);
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to store in cache: ${err}`);
+
+                            throw boom.serverUnavailable(err.message, err);
+                        }
+                    }
+
+                    return h.response().code(202);
                 },
-                validate: {
-                    params: joi.object({
-                        id: SCHEMA_BUILD_ID,
-                        artifact: SCHEMA_ARTIFACT_ID
-                    }),
-                    query: joi.object({
-                        type: TYPE,
-                        token: TOKEN
-                    })
+                options: {
+                    description: 'Write build artifacts',
+                    notes: 'Write an artifact from a specific build',
+                    tags: ['api', 'builds'],
+                    payload: {
+                        maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
+                        parse: false,
+                        output: 'stream'
+                    },
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['build']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            id: SCHEMA_BUILD_ID,
+                            artifact: SCHEMA_ARTIFACT_ID
+                        })
+                    }
                 }
             }
-        }, {
-            method: 'PUT',
-            path: '/builds/{id}/{artifact*}',
-            handler: async (request, h) => {
-                const { username } = request.auth.credentials;
-                const buildId = request.params.id;
-                const artifact = request.params.artifact;
-                const id = `${buildId}-${artifact}`;
-                const payload = request.payload;
-                const contents = {
-                    c: payload,
-                    h: {}
-                };
-
-                if (username !== buildId) {
-                    return boom.forbidden(`Credential only valid for ${username}`);
-                }
-
-                // Store all x-* and content-type headers
-                Object.keys(request.headers).forEach((header) => {
-                    if (header.indexOf('x-') === 0 || header === 'content-type') {
-                        contents.h[header] = request.headers[header];
-                    }
-                });
-
-                // stream large payload if using s3
-                if (usingS3) {
-                    try {
-                        await awsClient.uploadAsStream({
-                            payload,
-                            cacheKey: id
-                        });
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
-
-                        throw boom.serverUnavailable(err.message, err);
-                    }
-                } else {
-                    let value = contents;
-
-                    // convert stream to buffer, otherwise catbox cannot parse
-                    contents.c = await streamToBuffer(payload);
-
-                    // For text/plain payload, upload it as Buffer
-                    // Otherwise, catbox-s3 will try to JSON.stringify (https://github.com/fhemberger/catbox-s3/blob/master/lib/index.js#L236)
-                    // and might create issue on large payload
-                    if (contents.h['content-type'] === 'text/plain') {
-                        value = contents.c;
-                    }
-
-                    request.log(buildId, `Saving ${artifact} with `
-                        + `headers ${JSON.stringify(contents.h)}`);
-
-                    try {
-                        await cache.set(id, value, 0);
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to store in cache: ${err}`);
-
-                        throw boom.serverUnavailable(err.message, err);
-                    }
-                }
-
-                return h.response().code(202);
-            },
-            options: {
-                description: 'Write build artifacts',
-                notes: 'Write an artifact from a specific build',
-                tags: ['api', 'builds'],
-                payload: {
-                    maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
-                    parse: false,
-                    output: 'stream'
-                },
-                auth: {
-                    strategies: ['token'],
-                    scope: ['build']
-                },
-                plugins: {
-                    'hapi-swagger': {
-                        security: [{ token: [] }]
-                    }
-                },
-                validate: {
-                    params: joi.object({
-                        id: SCHEMA_BUILD_ID,
-                        artifact: SCHEMA_ARTIFACT_ID
-                    })
-                }
-            }
-        }]);
+        ]);
     }
 };

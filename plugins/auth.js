@@ -6,11 +6,11 @@ const joi = require('joi');
 /**
  * Validate JWT
  * @async  validate
- * @param  {Object}   decoded       Decoded JWT object
- * @param  {Hapi}     request       Hapi Request
+ * @param  {Object}   [decoded]     Decoded JWT object
+ * @param  {Hapi}     [request]     Hapi Request
  * @return {Object}                 Object with isValid property, denoting JWT validity
  */
-async function validate(decoded, request) { // eslint-disable-line no-unused-vars
+async function validate() {
     // TODO: figure out what to do here
     return { isValid: true };
 }
@@ -26,9 +26,13 @@ exports.plugin = {
      * @param  {String}   options.jwtPublicKey  Secret for validating signed JWTs
      */
     async register(server, options) {
-        const pluginOptions = joi.attempt(options, joi.object().keys({
-            jwtPublicKey: joi.string().required()
-        }), 'Invalid config for auth plugin');
+        const pluginOptions = joi.attempt(
+            options,
+            joi.object().keys({
+                jwtPublicKey: joi.string().required()
+            }),
+            'Invalid config for auth plugin'
+        );
 
         await server.register(jwt);
 

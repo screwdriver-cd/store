@@ -39,174 +39,177 @@ exports.plugin = {
 
         server.expose('stats', cache.stats);
 
-        server.route([{
-            method: 'GET',
-            path: '/commands/{namespace}/{name}/{version}',
-            handler: async (request, h) => {
-                const { namespace, name, version } = request.params;
-                const id = `${namespace}-${name}-${version}`;
-                let response;
-                let value;
+        server.route([
+            {
+                method: 'GET',
+                path: '/commands/{namespace}/{name}/{version}',
+                handler: async (request, h) => {
+                    const { namespace, name, version } = request.params;
+                    const id = `${namespace}-${name}-${version}`;
+                    let response;
+                    let value;
 
-                if (usingS3) {
-                    try {
-                        value = await awsClient.getDownloadObject({ objectKey: id });
-                    } catch (err) {
-                        request.log([id, 'error'], `Failed to fetch from s3: ${err}`);
-                        throw err;
-                    }
-                } else {
-                    try {
-                        value = await cache.get(id);
-                    } catch (err) {
-                        throw err;
-                    }
-
-                    if (!value) {
-                        throw boom.notFound();
-                    }
-                }
-
-                if (value.c) {
-                    response = h.response(Buffer.from(value.c.data));
-                    response.headers = value.h;
-                } else {
-                    response = h.response(Buffer.from(value));
-                    response.headers['content-type'] = 'application/octet-stream';
-                }
-
-                return response;
-            },
-            options: {
-                description: 'Get command binary',
-                notes: 'Get a script or binary of specific command',
-                tags: ['api', 'commands'],
-                auth: {
-                    strategies: ['token'],
-                    scope: ['user', 'pipeline', 'build']
-                },
-                plugins: {
-                    'hapi-swagger': {
-                        security: [{ token: [] }]
-                    }
-                },
-                validate: {
-                    params: joi.object({
-                        namespace: SCHEMA_COMMAND_NAMESPACE,
-                        name: SCHEMA_COMMAND_NAME,
-                        version: SCHEMA_COMMAND_VERSION
-                    })
-                }
-            }
-        }, {
-            method: 'POST',
-            path: '/commands/{namespace}/{name}/{version}',
-            handler: async (request, h) => {
-                const { pipelineId } = request.auth.credentials;
-                const { namespace, name, version } = request.params;
-                const id = `${namespace}-${name}-${version}`;
-                const contents = {
-                    c: request.payload,
-                    h: {}
-                };
-                const size = Buffer.byteLength(request.payload);
-
-                // Store all x-* and content-type headers
-                Object.keys(request.headers).forEach((header) => {
-                    if (header.indexOf('x-') === 0 || header === 'content-type') {
-                        contents.h[header] = request.headers[header];
-                    }
-                });
-
-                request.log([pipelineId], `Saving command of ${name} of size ${size} `
-                    + `bytes with headers ${JSON.stringify(contents.h)}`);
-
-                try {
                     if (usingS3) {
-                        await awsClient.uploadAsBuffer({ payload: contents, objectKey: id });
+                        try {
+                            value = await awsClient.getDownloadObject({ objectKey: id });
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to fetch from s3: ${err}`);
+                            throw err;
+                        }
                     } else {
-                        await cache.set(id, contents, 0);
-                    }
-                } catch (err) {
-                    request.log([id, 'error'], `Failed to create command: ${err}`);
-                    throw boom.serverUnavailable(err.message, err);
-                }
+                        value = await cache.get(id);
 
-                return h.response().code(202);
+                        if (!value) {
+                            throw boom.notFound();
+                        }
+                    }
+
+                    if (value.c) {
+                        response = h.response(Buffer.from(value.c.data));
+                        response.headers = value.h;
+                    } else {
+                        response = h.response(Buffer.from(value));
+                        response.headers['content-type'] = 'application/octet-stream';
+                    }
+
+                    return response;
+                },
+                options: {
+                    description: 'Get command binary',
+                    notes: 'Get a script or binary of specific command',
+                    tags: ['api', 'commands'],
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['user', 'pipeline', 'build']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            namespace: SCHEMA_COMMAND_NAMESPACE,
+                            name: SCHEMA_COMMAND_NAME,
+                            version: SCHEMA_COMMAND_VERSION
+                        })
+                    }
+                }
             },
-            options: {
-                description: 'Write command',
-                notes: 'Write a script or binary of specific command',
-                tags: ['api', 'commands'],
-                payload: {
-                    maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
-                    parse: false
-                },
-                auth: {
-                    strategies: ['token'],
-                    scope: ['build']
-                },
-                plugins: {
-                    'hapi-swagger': {
-                        security: [{ token: [] }]
-                    }
-                },
-                validate: {
-                    params: joi.object({
-                        namespace: SCHEMA_COMMAND_NAMESPACE,
-                        name: SCHEMA_COMMAND_NAME,
-                        version: SCHEMA_COMMAND_VERSION
-                    })
-                }
-            }
-        }, {
-            method: 'DELETE',
-            path: '/commands/{namespace}/{name}/{version}',
-            handler: async (request, h) => {
-                const { namespace, name, version } = request.params;
-                const id = `${namespace}-${name}-${version}`;
+            {
+                method: 'POST',
+                path: '/commands/{namespace}/{name}/{version}',
+                handler: async (request, h) => {
+                    const { pipelineId } = request.auth.credentials;
+                    const { namespace, name, version } = request.params;
+                    const id = `${namespace}-${name}-${version}`;
+                    const contents = {
+                        c: request.payload,
+                        h: {}
+                    };
+                    const size = Buffer.byteLength(request.payload);
 
-                try {
-                    if (usingS3) {
-                        await awsClient.removeObject(id, (err) => {
-                            if (err) {
-                                throw err;
-                            }
-                        });
+                    // Store all x-* and content-type headers
+                    Object.keys(request.headers).forEach(header => {
+                        if (header.indexOf('x-') === 0 || header === 'content-type') {
+                            contents.h[header] = request.headers[header];
+                        }
+                    });
+
+                    request.log(
+                        [pipelineId],
+                        `Saving command of ${name} of size ${size} ` +
+                            `bytes with headers ${JSON.stringify(contents.h)}`
+                    );
+
+                    try {
+                        if (usingS3) {
+                            await awsClient.uploadAsBuffer({ payload: contents, objectKey: id });
+                        } else {
+                            await cache.set(id, contents, 0);
+                        }
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to create command: ${err}`);
+                        throw boom.serverUnavailable(err.message, err);
+                    }
+
+                    return h.response().code(202);
+                },
+                options: {
+                    description: 'Write command',
+                    notes: 'Write a script or binary of specific command',
+                    tags: ['api', 'commands'],
+                    payload: {
+                        maxBytes: parseInt(options.maxByteSize, 10) || DEFAULT_BYTES,
+                        parse: false
+                    },
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['build']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            namespace: SCHEMA_COMMAND_NAMESPACE,
+                            name: SCHEMA_COMMAND_NAME,
+                            version: SCHEMA_COMMAND_VERSION
+                        })
+                    }
+                }
+            },
+            {
+                method: 'DELETE',
+                path: '/commands/{namespace}/{name}/{version}',
+                handler: async (request, h) => {
+                    const { namespace, name, version } = request.params;
+                    const id = `${namespace}-${name}-${version}`;
+
+                    try {
+                        if (usingS3) {
+                            await awsClient.removeObject(id, err => {
+                                if (err) {
+                                    throw err;
+                                }
+                            });
+                            request.log([id, 'info'], 'Successfully deleted a command');
+
+                            return h.response().code(204);
+                        }
+                        await cache.drop(id);
                         request.log([id, 'info'], 'Successfully deleted a command');
 
                         return h.response().code(204);
-                    }
-                    await cache.drop(id);
-                    request.log([id, 'info'], 'Successfully deleted a command');
-
-                    return h.response().code(204);
-                } catch (err) {
-                    request.log([id, 'error'], `Failed to delete a command: ${err}`);
-                    throw boom.serverUnavailable(err.message, err);
-                }
-            },
-            options: {
-                description: 'Delete command binary',
-                notes: 'Delete a script or binary of specific command',
-                tags: ['api', 'commands'],
-                auth: {
-                    strategies: ['token'],
-                    scope: ['build', 'user']
-                },
-                plugins: {
-                    'hapi-swagger': {
-                        security: [{ token: [] }]
+                    } catch (err) {
+                        request.log([id, 'error'], `Failed to delete a command: ${err}`);
+                        throw boom.serverUnavailable(err.message, err);
                     }
                 },
-                validate: {
-                    params: joi.object({
-                        namespace: SCHEMA_COMMAND_NAMESPACE,
-                        name: SCHEMA_COMMAND_NAME,
-                        version: SCHEMA_COMMAND_VERSION
-                    })
+                options: {
+                    description: 'Delete command binary',
+                    notes: 'Delete a script or binary of specific command',
+                    tags: ['api', 'commands'],
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['build', 'user']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            namespace: SCHEMA_COMMAND_NAMESPACE,
+                            name: SCHEMA_COMMAND_NAME,
+                            version: SCHEMA_COMMAND_VERSION
+                        })
+                    }
                 }
             }
-        }]);
+        ]);
     }
 };

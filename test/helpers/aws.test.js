@@ -5,7 +5,7 @@ const mockery = require('mockery');
 const sinon = require('sinon');
 const crypto = require('crypto');
 const stream = require('stream');
-const EventEmitter = require('events').EventEmitter;
+const { EventEmitter } = require('events');
 const util = require('util');
 
 sinon.assert.expose(assert, { prefix: '' });
@@ -20,7 +20,10 @@ describe('aws helper test', () => {
     const testBucket = 'TEST_REGION';
     const localCache = 'THIS IS A TEST';
     const partSize = 10 * 1024 * 1024;
-    const testMD5 = crypto.createHash('md5').update(localCache).digest('hex');
+    const testMD5 = crypto
+        .createHash('md5')
+        .update(localCache)
+        .digest('hex');
     const TestStream = class extends stream.Readable {
         _read() {}
     };
@@ -85,7 +88,7 @@ describe('aws helper test', () => {
         mockery.disable();
     });
 
-    it('update last modified', (done) => {
+    it('update last modified', done => {
         const headParam = {
             Bucket: testBucket,
             Key: `caches/${cacheKey}`
@@ -97,7 +100,7 @@ describe('aws helper test', () => {
             StorageClass: 'STANDARD'
         };
 
-        return awsClient.updateLastModified(cacheKey, (err) => {
+        return awsClient.updateLastModified(cacheKey, err => {
             assert.calledWith(clientMock.prototype.headObject, headParam);
             assert.calledWith(clientMock.prototype.copyObject, copyParam);
             assert.isNull(err);
@@ -105,56 +108,56 @@ describe('aws helper test', () => {
         });
     });
 
-    it('returns err if fails to get headObject', (done) => {
+    it('returns err if fails to get headObject', done => {
         const err = new Error('failed to get headObject');
 
         clientMock.prototype.headObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.updateLastModified(cacheKey, (e) => {
+        return awsClient.updateLastModified(cacheKey, e => {
             assert.deepEqual(e, err);
             done();
         });
     });
 
-    it('returns err if fails to copyObject', (done) => {
+    it('returns err if fails to copyObject', done => {
         const err = new Error('failed to copyObject');
 
         clientMock.prototype.copyObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.updateLastModified(cacheKey, (e) => {
+        return awsClient.updateLastModified(cacheKey, e => {
             assert.deepEqual(e, err);
             done();
         });
     });
 
-    it('returns err if fails to listObjects', (done) => {
+    it('returns err if fails to listObjects', done => {
         const err = new Error('failed to run listObjects');
 
         clientMock.prototype.listObjects = sinon.stub().yieldsAsync(err);
 
-        return awsClient.invalidateCache(cacheKey, (e) => {
+        return awsClient.invalidateCache(cacheKey, e => {
             assert.deepEqual(e, err);
             done();
         });
     });
 
-    it('returns err if fails to deleteObjects', (done) => {
+    it('returns err if fails to deleteObjects', done => {
         const err = new Error('failed to run deleteObjects');
 
         clientMock.prototype.listObjects = sinon.stub().yieldsAsync(err);
 
-        return awsClient.invalidateCache(cacheKey, (e) => {
+        return awsClient.invalidateCache(cacheKey, e => {
             assert.deepEqual(e, err);
             done();
         });
     });
 
-    it('returns err if fails to deleteObject', (done) => {
+    it('returns err if fails to deleteObject', done => {
         const err = new Error('failed to run deleteObjects');
 
         clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.removeObject(objectKey, (e) => {
+        return awsClient.removeObject(objectKey, e => {
             assert.deepEqual(e, err);
             done();
         });
@@ -169,12 +172,9 @@ describe('aws helper test', () => {
             partSize
         };
 
-        return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() })
-            .then(() => {
-                assert.calledWith(clientMock.prototype.upload,
-                    sinon.match(uploadParam),
-                    sinon.match(uploadOption));
-            });
+        return awsClient.uploadAsStream({ cacheKey, payload: new TestStream() }).then(() => {
+            assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam), sinon.match(uploadOption));
+        });
     });
 
     it('upload commands directly', () => {
@@ -188,12 +188,9 @@ describe('aws helper test', () => {
         };
 
         // eslint-disable-next-line new-cap
-        return awsClient.uploadAsBuffer({ payload: Buffer.from('hello world', 'utf8'), objectKey })
-            .then(() => {
-                assert.calledWith(clientMock.prototype.upload,
-                    sinon.match(uploadParam),
-                    sinon.match(uploadOption));
-            });
+        return awsClient.uploadAsBuffer({ payload: Buffer.from('hello world', 'utf8'), objectKey }).then(() => {
+            assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam), sinon.match(uploadOption));
+        });
     });
 
     it('resolves a download stream', () => {
@@ -207,23 +204,21 @@ describe('aws helper test', () => {
             testAwsRequest.emit('httpHeaders', 200);
         }, 0);
 
-        return awsClient.getDownloadStream({ cacheKey })
-            .then(({ s3Stream: data }) => {
-                assert.calledWith(clientMock.prototype.getObject, getParam);
-                assert.isTrue(data instanceof TestStream);
-            });
+        return awsClient.getDownloadStream({ cacheKey }).then(({ s3Stream: data }) => {
+            assert.calledWith(clientMock.prototype.getObject, getParam);
+            assert.isTrue(data instanceof TestStream);
+        });
     });
 
-    it('return error if getDownload fails to fetch', function () {
+    it('return error if getDownload fails to fetch', function() {
         const err = new Error('Fetch request failed');
 
         clientMock.prototype.getObject = sinon.stub().yieldsAsync(err, '');
 
-        return awsClient.getDownloadObject({ objectKey })
-            .catch(error => assert.equal(error.message, err.message));
+        return awsClient.getDownloadObject({ objectKey }).catch(error => assert.equal(error.message, err.message));
     });
 
-    it('try downloading command', function () {
+    it('try downloading command', function() {
         const value = '{ "data2": "test string" }';
         const data = {
             Body: value,
@@ -235,18 +230,20 @@ describe('aws helper test', () => {
 
         clientMock.prototype.getObject = sinon.stub().yields(null, resp);
 
-        return awsClient.getDownloadObject({ objectKey })
-            .then(result => expect(result).have.property('data2', 'test string'))
-        ;
+        return awsClient
+            .getDownloadObject({ objectKey })
+            .then(result => expect(result).have.property('data2', 'test string'));
     });
 
-    it('returns error if return command is not JSON', function () {
+    it('returns error if return command is not JSON', function() {
         const err = new Error('Fetch request failed');
 
         clientMock.prototype.getObject = sinon.stub().yields(err);
 
-        return awsClient.getDownloadObject({ objectKey })
-            .then(() => Promise.reject(err), e => assert.instanceOf(e, Error));
+        return awsClient.getDownloadObject({ objectKey }).then(
+            () => Promise.reject(err),
+            e => assert.instanceOf(e, Error)
+        );
     });
 
     it('rejects with a boom object if getObject request failed', () => {
@@ -260,11 +257,10 @@ describe('aws helper test', () => {
             testAwsRequest.emit('httpHeaders', 404);
         }, 0);
 
-        return awsClient.getDownloadStream({ cacheKey })
-            .catch((err) => {
-                assert.calledWith(clientMock.prototype.getObject, getParam);
-                assert.deepEqual(err.isBoom, true);
-                assert.deepEqual(err.output.statusCode, 404);
-            });
+        return awsClient.getDownloadStream({ cacheKey }).catch(err => {
+            assert.calledWith(clientMock.prototype.getObject, getParam);
+            assert.deepEqual(err.isBoom, true);
+            assert.deepEqual(err.output.statusCode, 404);
+        });
     });
 });

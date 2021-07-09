@@ -26,10 +26,9 @@ describe('commands plugin test', () => {
 
     beforeEach(async () => {
         configMock = {
-            get: sinon.stub()
-                .returns({
-                    plugin: 'memory'
-                })
+            get: sinon.stub().returns({
+                plugin: 'memory'
+            })
         };
         mockery.registerMock('config', configMock);
 
@@ -70,22 +69,23 @@ describe('commands plugin test', () => {
     });
 
     describe('GET /commands/:namespace/:name/:version', () => {
-        it('returns 404 if not found', () => (
-            server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        scope: ['user']
-                    }
-                },
-                url: `/commands/${mockCommandNamespace}/foo/0.0`
-            }).then((response) => {
-                assert.equal(response.statusCode, 404);
-            })
-        ));
+        it('returns 404 if not found', () =>
+            server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
+                    },
+                    url: `/commands/${mockCommandNamespace}/foo/0.0`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 404);
+                }));
 
         describe('caching is not setup right', () => {
             let badServer;
@@ -113,23 +113,23 @@ describe('commands plugin test', () => {
                 badServer = null;
             });
 
-            it('returns 500 if caching fails', () => (
-                badServer.inject({
-                    headers: {
-                        'x-foo': 'bar'
-                    },
-                    auth: {
-                        strategy: 'token',
-                        credentials: {
-                            scope: ['user']
-                        }
-                    },
-                    url: `/commands/${mockCommandNamespace}/`
-                        + `${mockCommandName}/${mockCommandVersion}`
-                }).then((response) => {
-                    assert.equal(response.statusCode, 500);
-                })
-            ));
+            it('returns 500 if caching fails', () =>
+                badServer
+                    .inject({
+                        headers: {
+                            'x-foo': 'bar'
+                        },
+                        auth: {
+                            strategy: 'token',
+                            credentials: {
+                                scope: ['user']
+                            }
+                        },
+                        url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+                    })
+                    .then(response => {
+                        assert.equal(response.statusCode, 500);
+                    }));
         });
     });
 
@@ -159,50 +159,49 @@ describe('commands plugin test', () => {
             options.url = '/commands/foo/bar/1.2.3';
             options.auth.credentials.scope = ['user'];
 
-            return server.inject(options).then((response) => {
+            return server.inject(options).then(response => {
                 assert.equal(response.statusCode, 403);
             });
         });
 
         it('returns 5xx if cache is bad', () => {
-            options.url = `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`;
+            options.url = `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`;
             // @note this pushes the payload size over the 512 byte limit
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
             options.payload += 'REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE';
 
-            return server.inject(options).then((response) => {
+            return server.inject(options).then(response => {
                 assert.equal(response.statusCode, 503);
             });
         });
 
         it('saves an artifact', async () => {
-            options.url = `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`;
+            options.url = `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`;
 
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
 
-            return server.inject({
-                url: `/commands/${mockCommandNamespace}/`
-                    + `${mockCommandName}/${mockCommandVersion}`,
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        scope: ['user']
+            return server
+                .inject({
+                    url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`,
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
                     }
-                }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['x-foo'], 'bar');
-                assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
-                assert.isNotOk(getResponse.headers.ignore);
-                assert.equal(getResponse.result, 'THIS IS A TEST');
-            });
+                })
+                .then(getResponse => {
+                    assert.equal(getResponse.statusCode, 200);
+                    assert.equal(getResponse.headers['x-foo'], 'bar');
+                    assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
+                    assert.isNotOk(getResponse.headers.ignore);
+                    assert.equal(getResponse.result, 'THIS IS A TEST');
+                });
         });
     });
 
@@ -258,29 +257,31 @@ describe('commands plugin test', () => {
             };
         });
 
-        it('returns 200 if not found', () => server.inject(getOptions).then((getResponse) => {
-            assert.equal(getResponse.statusCode, 404);
+        it('returns 200 if not found', () =>
+            server.inject(getOptions).then(getResponse => {
+                assert.equal(getResponse.statusCode, 404);
 
-            return server.inject(deleteOptions).then((deleteResponse) => {
-                assert.equal(deleteResponse.statusCode, 204);
-            });
-        }));
-
-        it('deletes an artifact', () => server.inject(postOptions).then((postResponse) => {
-            assert.equal(postResponse.statusCode, 202);
-
-            return server.inject(getOptions).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-
-                return server.inject(deleteOptions).then((deleteResponse) => {
+                return server.inject(deleteOptions).then(deleteResponse => {
                     assert.equal(deleteResponse.statusCode, 204);
+                });
+            }));
 
-                    return server.inject(getOptions).then((getResponse2) => {
-                        assert.equal(getResponse2.statusCode, 404);
+        it('deletes an artifact', () =>
+            server.inject(postOptions).then(postResponse => {
+                assert.equal(postResponse.statusCode, 202);
+
+                return server.inject(getOptions).then(getResponse => {
+                    assert.equal(getResponse.statusCode, 200);
+
+                    return server.inject(deleteOptions).then(deleteResponse => {
+                        assert.equal(deleteResponse.statusCode, 204);
+
+                        return server.inject(getOptions).then(getResponse2 => {
+                            assert.equal(getResponse2.statusCode, 404);
+                        });
                     });
                 });
-            });
-        }));
+            }));
     });
 });
 describe('commands plugin test using s3', () => {
@@ -307,36 +308,29 @@ describe('commands plugin test using s3', () => {
 
     beforeEach(() => {
         configMock = {
-            get: sinon.stub()
-                .returns({
-                    plugin: 's3',
-                    s3: {}
-                })
+            get: sinon.stub().returns({
+                plugin: 's3',
+                s3: {}
+            })
         };
-        getDownloadStreamMock = sinon.stub()
-            .resolves(null);
-        uploadAsStreamMock = sinon.stub()
-            .resolves(null);
-        deleteObjMock = sinon.stub()
-            .resolves(null);
-        getDownloadMock = sinon.stub()
-            .resolves(null);
-        uploadDirectMock = sinon.stub()
-            .resolves(null);
+        getDownloadStreamMock = sinon.stub().resolves(null);
+        uploadAsStreamMock = sinon.stub().resolves(null);
+        deleteObjMock = sinon.stub().resolves(null);
+        getDownloadMock = sinon.stub().resolves(null);
+        uploadDirectMock = sinon.stub().resolves(null);
 
-        awsClientMock = sinon.stub()
-            .returns({
-                updateLastModified: sinon.stub()
-                    .yields(null),
-                removeObject: deleteObjMock,
-                getDownloadStream: getDownloadStreamMock,
-                uploadCmdAsStream: uploadAsStreamMock,
-                getDownloadObject: getDownloadMock,
-                uploadAsBuffer: uploadDirectMock
-            });
+        awsClientMock = sinon.stub().returns({
+            updateLastModified: sinon.stub().yields(null),
+            removeObject: deleteObjMock,
+            getDownloadStream: getDownloadStreamMock,
+            uploadCmdAsStream: uploadAsStreamMock,
+            getDownloadObject: getDownloadMock,
+            uploadAsBuffer: uploadDirectMock
+        });
 
         data = {
-            c: { data: 'test' }, h: { contentType: 'application/json', response: {} }
+            c: { data: 'test' },
+            h: { contentType: 'application/json', response: {} }
         };
 
         mockery.registerMock('../helpers/aws', awsClientMock);
@@ -354,8 +348,7 @@ describe('commands plugin test using s3', () => {
         server.auth.strategy('token', 'custom');
         server.auth.strategy('session', 'custom');
 
-        return server.register({ plugin })
-            .then(() => server.start());
+        return server.register({ plugin }).then(() => server.start());
     });
 
     afterEach(async () => {
@@ -379,19 +372,20 @@ describe('commands plugin test using s3', () => {
 
             getDownloadMock.resolves(resp);
 
-            return server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        scope: ['user']
-                    }
-                },
-                url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
-            })
-                .then((response) => {
+            return server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
+                    },
+                    url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+                })
+                .then(response => {
                     assert.calledWith(getDownloadMock, {
                         // eslint-disable-next-line max-len
                         objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
@@ -401,23 +395,26 @@ describe('commands plugin test using s3', () => {
         });
 
         it('returns 404 if not found', () => {
-            getDownloadMock.throws(Boom.boomify(new Error('Not found'), {
-                statusCode: 404
-            }));
+            getDownloadMock.throws(
+                Boom.boomify(new Error('Not found'), {
+                    statusCode: 404
+                })
+            );
 
-            return server.inject({
-                headers: {
-                    'x-foo': 'bar'
-                },
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        scope: ['user']
-                    }
-                },
-                url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
-            })
-                .then((response) => {
+            return server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
+                    },
+                    url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+                })
+                .then(response => {
                     assert.calledWith(getDownloadMock, {
                         // eslint-disable-next-line max-len
                         objectKey: `${mockCommandNamespace}-${mockCommandName}-${mockCommandVersion}`
@@ -453,7 +450,7 @@ describe('commands plugin test using s3', () => {
             options.url = '/commands/foo/bar/1.2.3';
             options.auth.credentials.scope = ['user'];
 
-            return server.inject(options).then((response) => {
+            return server.inject(options).then(response => {
                 assert.equal(response.statusCode, 403);
             });
         });
@@ -461,8 +458,7 @@ describe('commands plugin test using s3', () => {
         it('saves an artifact', async () => {
             const resp = Object.create(data);
 
-            options.url = `/commands/${mockCommandNamespace}/`
-                + `${mockCommandName}/${mockCommandVersion}`;
+            options.url = `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`;
 
             const putResponse = await server.inject(options);
 
@@ -470,20 +466,21 @@ describe('commands plugin test using s3', () => {
 
             getDownloadMock.resolves(resp);
 
-            return server.inject({
-                url: `/commands/${mockCommandNamespace}/`
-                    + `${mockCommandName}/${mockCommandVersion}`,
-                auth: {
-                    strategy: 'token',
-                    credentials: {
-                        scope: ['user']
+            return server
+                .inject({
+                    url: `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`,
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            scope: ['user']
+                        }
                     }
-                }
-            }).then((getResponse) => {
-                assert.equal(getResponse.statusCode, 200);
-                assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
-                assert.isNotOk(getResponse.headers.ignore);
-            });
+                })
+                .then(getResponse => {
+                    assert.equal(getResponse.statusCode, 200);
+                    assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
+                    assert.isNotOk(getResponse.headers.ignore);
+                });
         });
     });
 
@@ -511,7 +508,7 @@ describe('commands plugin test using s3', () => {
         it('Returns 200 if successfully invalidate cache', () => {
             deleteObjMock.yields(null);
 
-            return server.inject(deleteOptions).then((deleteResponse) => {
+            return server.inject(deleteOptions).then(deleteResponse => {
                 assert.equal(deleteResponse.statusCode, 204);
             });
         });
