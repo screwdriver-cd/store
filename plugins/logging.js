@@ -7,13 +7,17 @@ const options = {
         interval: 1000
     },
     reporters: {
-        console: [{
-            module: '@hapi/good-squeeze',
-            name: 'Squeeze',
-            args: [{ error: '*', log: '*', response: '*', request: '*' }]
-        }, {
-            module: '@hapi/good-console'
-        }, 'stdout']
+        console: [
+            {
+                module: '@hapi/good-squeeze',
+                name: 'Squeeze',
+                args: [{ error: '*', log: '*', response: '*', request: '*' }]
+            },
+            {
+                module: '@hapi/good-console'
+            },
+            'stdout'
+        ]
     }
 };
 

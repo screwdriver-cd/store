@@ -45,13 +45,14 @@ describe('swagger plugin test', () => {
     });
 
     describe('GET /swagger.json', () => {
-        it('returns 200 with OK', () => (
-            server.inject({
-                url: '/swagger.json'
-            }).then((response) => {
-                assert.equal(response.statusCode, 200);
-                assert.isOk(response.result.swagger);
-            })
-        ));
+        it('returns 200 with OK', () =>
+            server
+                .inject({
+                    url: '/swagger.json'
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 200);
+                    assert.isOk(response.result.swagger);
+                }));
     });
 });

@@ -44,13 +44,14 @@ describe('status plugin test', () => {
     });
 
     describe('GET /status', () => {
-        it('returns 200 with OK', () => (
-            server.inject({
-                url: '/status'
-            }).then((response) => {
-                assert.equal(response.statusCode, 200);
-                assert.deepEqual(response.result, 'OK');
-            })
-        ));
+        it('returns 200 with OK', () =>
+            server
+                .inject({
+                    url: '/status'
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 200);
+                    assert.deepEqual(response.result, 'OK');
+                }));
     });
 });

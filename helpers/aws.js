@@ -72,7 +72,7 @@ class AwsClient {
             };
 
             // update storage class to same value to update last modified: https://alestic.com/2013/09/s3-lifecycle-extend
-            return this.client.copyObject(params, (e) => {
+            return this.client.copyObject(params, e => {
                 if (e) {
                     return callback(e);
                 }
@@ -104,11 +104,11 @@ class AwsClient {
             params = { Bucket: this.bucket };
             params.Delete = { Objects: [] };
 
-            data.Contents.forEach((content) => {
+            data.Contents.forEach(content => {
                 params.Delete.Objects.push({ Key: content.Key });
             });
 
-            return this.client.deleteObjects(params, (err) => {
+            return this.client.deleteObjects(params, err => {
                 if (err) return callback(err);
                 if (data.isTruncated) return self.invalidateCache(cachePath, callback);
 
@@ -124,11 +124,12 @@ class AwsClient {
      * @return {String}
      */
     getStoragePathForKey(cacheKey) {
-        const convert = str => str
-            // Remove leading/trailing slashes
-            .replace(/(^\/|\/$)/g, '')
-            // Replace special URL characters
-            .replace(/[?&#%]/g, '~');
+        const convert = str =>
+            str
+                // Remove leading/trailing slashes
+                .replace(/(^\/|\/$)/g, '')
+                // Replace special URL characters
+                .replace(/[?&#%]/g, '~');
 
         const parsedKey = convert(cacheKey);
 
@@ -215,17 +216,19 @@ class AwsClient {
             const req = this.client.getObject(params);
 
             // check the header before returning a stream, if request failed, reject
-            const s3Stream = req.on('httpHeaders', (statusCode, headers) => {
-                if (statusCode >= 400) {
-                    logger.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
-                    const error = new Error('Fetch cache request failed');
+            const s3Stream = req
+                .on('httpHeaders', (statusCode, headers) => {
+                    if (statusCode >= 400) {
+                        logger.error(`Fetch ${cacheKey} request failed: ${statusCode}`);
+                        const error = new Error('Fetch cache request failed');
 
-                    return reject(Boom.boomify(error, { statusCode }));
-                }
+                        return reject(Boom.boomify(error, { statusCode }));
+                    }
 
-                return resolve({ s3Stream, s3Headers: headers });
-            }).createReadStream()
-                .on('error', (error) => {
+                    return resolve({ s3Stream, s3Headers: headers });
+                })
+                .createReadStream()
+                .on('error', error => {
                     logger.error(`Error streaming ${cacheKey}: ${error}`);
                 });
         });
@@ -277,7 +280,7 @@ class AwsClient {
             Key: `${this.segment}/${object}`
         };
 
-        return this.client.deleteObject(params, (err) => {
+        return this.client.deleteObject(params, err => {
             if (err) return callback(err);
 
             return callback();
