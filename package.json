@@ -73,7 +73,6 @@
     "aws-sdk": "^2.361.0",
     "catbox-disk": "^3.0.2",
     "catbox-s3": "^4.0.0",
-    "cheerio": "^1.0.0-rc.3",
     "config": "^1.30.0",
     "hapi-auth-jwt2": "^10.1.0",
     "hapi-swagger": "^14.0.0",
