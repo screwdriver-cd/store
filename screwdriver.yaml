@@ -27,7 +27,7 @@ jobs:
     # Deploy to beta environment and run tests
     beta:
         image: node:12
-        requires: [publish]
+        requires: [docker-publish]
         steps:
             - setup-ci: git clone https://github.com/screwdriver-cd/toolbox.git ci
             - get-tag: ./ci/git-latest.sh
