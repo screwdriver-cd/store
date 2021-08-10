@@ -1,8 +1,10 @@
 shared:
-    image: node:12
+    environment:
+        DOCKER_REPO: screwdrivercd/store
 
 jobs:
     main:
+        image: node:12
         environment:
             SD_SONAR_OPTS: "-Dsonar.sources=lib,plugins,helpers -Dsonar.tests=test -Dsonar.javascript.lcov.reportPaths=artifacts/coverage/lcov.info -Dsonar.testExecutionReportPaths=artifacts/report/test.xml"
         requires: [~pr, ~commit]
@@ -14,26 +16,18 @@ jobs:
     publish:
         requires: [main]
         template: screwdriver-cd/semantic-release
-        steps:
-          - postpublish: |
-                git clone https://github.com/screwdriver-cd/toolbox.git ci
-                git fetch
-                export DOCKER_TAG=`git describe --tags`
-                ./ci/docker-trigger.sh
-        environment:
-            # Docker hub repo
-            DOCKER_REPO: screwdrivercd/store
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
             # Pushing tags to Git
             - GH_TOKEN
-            # Trigger a Docker Hub build
-            - DOCKER_TRIGGER
-
+    docker-publish:
+        requires: publish
+        template: sd/dind@latest
     # Deploy to beta environment and run tests
     beta:
-        requires: [publish]
+        image: node:12
+        requires: [docker-publish]
         steps:
             - setup-ci: git clone https://github.com/screwdriver-cd/toolbox.git ci
             - get-tag: ./ci/git-latest.sh
@@ -41,7 +35,6 @@ jobs:
             - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
             - test: sleep 20 && curl --silent --fail -o /dev/null https://beta.store.screwdriver.cd/v1/status
         environment:
-            DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
             K8S_IMAGE: screwdrivercd/store
             K8S_HOST: kubernetes.default.svc
@@ -53,6 +46,7 @@ jobs:
 
     # Deploy to prod environment and run tests
     prod:
+        image: node:12
         requires: [beta]
         steps:
             - setup-ci: git clone https://github.com/screwdriver-cd/toolbox.git ci
@@ -61,7 +55,6 @@ jobs:
             - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
             - test: sleep 20 && curl --silent --fail -o /dev/null https://store.screwdriver.cd/v1/status
         environment:
-            DOCKER_REPO: screwdrivercd/store
             K8S_CONTAINER: screwdriver-store
             K8S_IMAGE: screwdrivercd/store
             K8S_HOST: kubernetes.default.svc
