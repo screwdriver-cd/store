@@ -136,7 +136,7 @@ describe('builds plugin test', () => {
 
         it('type=preview ending with html', async () => {
             const id = `${mockBuildID}-foo.html`;
-            const content = 'HELLO WORLD';
+            const content = '<html><head></head><body>HELLO WORLD</body></html>';
             const htmlContent = fs.readFileSync(path.join(__dirname, './data/helloworld.html'), 'utf8');
             const cache = server.cache({
                 segment: 'builds',

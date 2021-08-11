@@ -3,10 +3,8 @@
 const joi = require('joi');
 const boom = require('@hapi/boom');
 const config = require('config');
-const cheerio = require('cheerio');
 
 const AwsClient = require('../helpers/aws');
-const { iframeScript } = require('../helpers/iframe');
 const { streamToBuffer } = require('../helpers/helper');
 const { getMimeFromFileName, displayableMimes } = require('../helpers/mime');
 
@@ -65,7 +63,6 @@ exports.plugin = {
 
                     let value;
                     let response;
-                    let isStreamOutput = false;
 
                     // for old json files, the value is hidden in an object, we cannot stream it directly
                     if (usingS3) {
@@ -76,7 +73,6 @@ exports.plugin = {
 
                             response = h.response(value);
                             response.headers['content-length'] = s3Headers['content-length'];
-                            isStreamOutput = true;
                         } catch (err) {
                             request.log([id, 'error'], `Failed to stream the cache: ${err}`);
                             throw err;
@@ -108,21 +104,7 @@ exports.plugin = {
 
                         response.headers['content-type'] = mime;
 
-                        if (displayableMimes.includes(mime)) {
-                            let htmlContent;
-
-                            if (isStreamOutput) {
-                                htmlContent = await streamToBuffer(value);
-                            } else {
-                                htmlContent = Buffer.from(value);
-                            }
-                            const $ = cheerio.load(htmlContent);
-                            const scriptNode = `<script>${iframeScript}</script>`;
-
-                            // inject postMessage into code
-                            $('body').append(scriptNode);
-                            response = h.response($.html());
-                        } else {
+                        if (!displayableMimes.includes(mime)) {
                             response.headers['content-disposition'] = `inline; filename="${encodeURI(fileName)}"`;
                         }
                     }
