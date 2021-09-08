@@ -75,10 +75,9 @@
     "catbox-s3": "^4.0.0",
     "config": "^1.30.0",
     "hapi-auth-jwt2": "^10.1.0",
-    "hapi-swagger": "^14.0.0",
+    "hapi-swagger": "^14.2.4",
     "joi": "^17.2.0",
     "mime-types": "^2.1.25",
-    "request": "^2.88.0",
     "screwdriver-data-schema": "^21.0.0",
     "screwdriver-logger": "^1.0.0"
   }
