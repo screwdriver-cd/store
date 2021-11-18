@@ -117,7 +117,7 @@ exports.plugin = {
                     tags: ['api', 'builds'],
                     auth: {
                         strategies: ['token'],
-                        scope: ['user', 'pipeline', 'build']
+                        scope: ['user', 'pipeline', 'build', 'unzip_worker']
                     },
                     plugins: {
                         'hapi-swagger': {
@@ -210,7 +210,7 @@ exports.plugin = {
                     },
                     auth: {
                         strategies: ['token'],
-                        scope: ['build']
+                        scope: ['build', 'unzip_worker']
                     },
                     plugins: {
                         'hapi-swagger': {

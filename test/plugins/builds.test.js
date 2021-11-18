@@ -69,6 +69,36 @@ describe('builds plugin test', () => {
     });
 
     describe('GET /builds/:id/:artifact', () => {
+        it('returns 200 if unzip_worker scope token is used', async () => {
+            const id = `${mockBuildID}-foo`;
+            const content = 'HELLO WORLD';
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, content);
+
+            return server
+                .inject({
+                    headers: {
+                        'x-foo': 'bar'
+                    },
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID,
+                            scope: ['unzip_worker']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/foo`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 200);
+                });
+        });
+
         it('returns 404 if not found', () =>
             server
                 .inject({
@@ -221,6 +251,15 @@ describe('builds plugin test', () => {
                     }
                 }
             };
+        });
+
+        it('returns 202 if unzip_worker scope token is used', async () => {
+            options.url = `/builds/${mockBuildID}/foo`;
+            options.auth.credentials.scope = ['unzip_worker'];
+
+            return server.inject(options).then(response => {
+                assert.equal(response.statusCode, 202);
+            });
         });
 
         it('returns 403 if wrong creds', () => {
