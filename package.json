@@ -4,7 +4,7 @@
   "description": "Pluggable Artifact Store (for logs, shared steps, templates, etc).",
   "main": "index.js",
   "scripts": {
-    "pretest": "eslint .",
+    "pretest": "eslint . --fix",
     "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --reporter mocha-multi-reporters --reporter-options configFile=./mocha.config.json --recursive --timeout 4000 --retries 1 --exit --allow-uncaught true --color true",
     "start": "./bin/server",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post",
@@ -41,10 +41,7 @@
     "Tiffany Kyi <tiffanykyi@gmail.com>"
   ],
   "release": {
-    "debug": false,
-    "verifyConditions": {
-      "path": "./node_modules/semantic-release/src/lib/plugin-noop.js"
-    }
+    "debug": false
   },
   "devDependencies": {
     "chai": "^4.3.4",
