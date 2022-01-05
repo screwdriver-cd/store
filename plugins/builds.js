@@ -270,7 +270,6 @@ exports.plugin = {
                             artifact: SCHEMA_ARTIFACT_ID
                         }),
                         query: joi.object({
-                            type: TYPE,
                             token: TOKEN
                         })
                     }
