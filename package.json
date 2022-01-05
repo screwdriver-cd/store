@@ -4,15 +4,15 @@
   "description": "Pluggable Artifact Store (for logs, shared steps, templates, etc).",
   "main": "index.js",
   "scripts": {
-    "pretest": "eslint . --fix",
+    "pretest": "eslint .",
     "test": "nyc --report-dir ./artifacts/coverage --reporter=lcov mocha --reporter mocha-multi-reporters --reporter-options configFile=./mocha.config.json --recursive --timeout 4000 --retries 1 --exit --allow-uncaught true --color true",
     "start": "./bin/server",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "semantic-release": "./node_modules/.bin/semantic-release",
     "debug": "node --nolazy ./bin/server"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:screwdriver-cd/store.git"
+    "url": "git+https://github.com/screwdriver-cd/store.git"
   },
   "engines": {
     "node": ">=8.9.0"
