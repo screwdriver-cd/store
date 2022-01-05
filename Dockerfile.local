@@ -8,9 +8,6 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 RUN npm install --production
 
-# Setup configuration folder
-RUN ln -s /usr/src/app/node_modules/screwdriver-store/config /config
-
 # Expose the web service port
 EXPOSE 80
 
