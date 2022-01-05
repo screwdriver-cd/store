@@ -271,12 +271,12 @@ class AwsClient {
     /**
      * Delete s3 object
      * @method removeObject
-     * @param {String}              cacheKey       Path to cache
+     * @param {String}              objectKey       Path to object
      */
-    removeObject(cacheKey) {
+    removeObject(objectKey) {
         const params = {
             Bucket: this.bucket,
-            Key: this.getStoragePathForKey(cacheKey)
+            Key: this.getStoragePathForKey(objectKey)
         };
 
         return new Promise((resolve, reject) => {
@@ -284,7 +284,7 @@ class AwsClient {
                 if (err) {
                     const status = parseInt(err.code, 10);
 
-                    logger.error(`Delete ${cacheKey} request failed: ${err}`);
+                    logger.error(`Delete ${objectKey} request failed: ${err}`);
 
                     return reject(Boom.boomify(err, { statusCode: status }));
                 }
