@@ -252,7 +252,7 @@ exports.plugin = {
                     return h.response().code(204);
                 },
                 options: {
-                    description: 'Delete build artifacts zip',
+                    description: 'Delete build artifacts',
                     notes: 'Delete an artifact from a specific build',
                     tags: ['api', 'build'],
                     auth: {
