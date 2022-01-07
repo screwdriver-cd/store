@@ -5,8 +5,11 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
 # Install Screwdriver Store
-COPY . /usr/src/app
+COPY package.json /usr/src/app/
 RUN npm install --production
+
+# Copy everything else
+COPY . /usr/src/app
 
 # Expose the web service port
 EXPOSE 80
