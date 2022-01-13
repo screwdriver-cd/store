@@ -271,19 +271,26 @@ class AwsClient {
     /**
      * Delete s3 object
      * @method removeObject
-     * @param {String}              object       object name
-     * @param {Function}            callback        callback function
+     * @param {String}              objectKey       Path to object
      */
-    removeObject(object, callback) {
+    removeObject(objectKey) {
         const params = {
             Bucket: this.bucket,
-            Key: `${this.segment}/${object}`
+            Key: this.getStoragePathForKey(objectKey)
         };
 
-        return this.client.deleteObject(params, err => {
-            if (err) return callback(err);
+        return new Promise((resolve, reject) => {
+            this.client.deleteObject(params, err => {
+                if (err) {
+                    const status = parseInt(err.code, 10);
 
-            return callback();
+                    logger.error(`Delete ${objectKey} request failed: ${err}`);
+
+                    return reject(Boom.boomify(err, { statusCode: status }));
+                }
+
+                return resolve();
+            });
         });
     }
 }

@@ -152,15 +152,17 @@ describe('aws helper test', () => {
         });
     });
 
-    it('returns err if fails to deleteObject', done => {
+    it('returns err if fails to deleteObject', async () => {
         const err = new Error('failed to run deleteObjects');
 
         clientMock.prototype.deleteObject = sinon.stub().yieldsAsync(err);
 
-        return awsClient.removeObject(objectKey, e => {
+        try {
+            await awsClient.removeObject(objectKey);
+            assert.fail('Never reaches here');
+        } catch (e) {
             assert.deepEqual(e, err);
-            done();
-        });
+        }
     });
 
     it('uploads data as stream', () => {

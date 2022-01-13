@@ -462,6 +462,62 @@ describe('builds plugin test', () => {
                 });
         });
     });
+
+    describe('DELETE /builds/:id/:artifact', () => {
+        let options;
+
+        beforeEach(() => {
+            options = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    ignore: 'true'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['unzip_worker']
+                    }
+                }
+            };
+        });
+
+        it('delete an artifact zip', async () => {
+            options.url = `/builds/${mockBuildID}/SD_ARTIFACT.zip`;
+
+            const id = `${mockBuildID}-SD_ARTIFACT.zip`;
+            const content = '';
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, content);
+
+            const deleteResponse = await server.inject(options);
+
+            assert.equal(deleteResponse.statusCode, 204);
+        });
+
+        it('returns 403 if wrong creds', () => {
+            options.url = `/builds/${mockBuildID}/SD_ARTIFACT.zip`;
+            options.auth.credentials.scope = ['build'];
+
+            return server.inject(options).then(response => {
+                assert.equal(response.statusCode, 403);
+            });
+        });
+
+        it('returns 204 if not found zip file', () => {
+            options.url = `/builds/${mockBuildID}/SD_BAD_ARTIFACT.zip`;
+
+            return server.inject(options).then(response => {
+                assert.equal(response.statusCode, 204);
+            });
+        });
+    });
 });
 
 describe('builds plugin test using s3', () => {
@@ -472,6 +528,7 @@ describe('builds plugin test using s3', () => {
     let configMock;
     let getDownloadStreamMock;
     let uploadAsStreamMock;
+    let removeObjectMock;
 
     before(() => {
         mockery.enable({
@@ -490,12 +547,14 @@ describe('builds plugin test using s3', () => {
 
         getDownloadStreamMock = sinon.stub().resolves({ s3Stream: {}, s3Headers: {} });
         uploadAsStreamMock = sinon.stub().resolves(null);
+        removeObjectMock = sinon.stub().resolves(null);
 
         awsClientMock = sinon.stub().returns({
             updateLastModified: sinon.stub().yields(null),
             invalidateCache: sinon.stub().yields(null),
             getDownloadStream: getDownloadStreamMock,
-            uploadAsStream: uploadAsStreamMock
+            uploadAsStream: uploadAsStreamMock,
+            removeObject: removeObjectMock
         });
 
         reqMock = sinon.stub();
@@ -658,6 +717,51 @@ describe('builds plugin test using s3', () => {
                     cacheKey: `${mockBuildID}-foo.zip`
                 })
             );
+        });
+    });
+
+    describe('DELETE /builds/:id/:artifact', () => {
+        let options;
+
+        beforeEach(() => {
+            options = {
+                method: 'DELETE',
+                headers: {
+                    'x-foo': 'bar',
+                    ignore: 'true'
+                },
+                auth: {
+                    strategy: 'token',
+                    credentials: {
+                        username: mockBuildID,
+                        scope: ['unzip_worker']
+                    }
+                }
+            };
+        });
+
+        it('delete an artifact zip', async () => {
+            options.url = `/builds/${mockBuildID}/SD_ARTIFACT.zip`;
+            const deleteResponse = await server.inject(options);
+
+            assert.equal(deleteResponse.statusCode, 204);
+        });
+
+        it('returns 403 if wrong creds', async () => {
+            options.url = `/builds/${mockBuildID}/SD_ARTIFACT.zip`;
+            options.auth.credentials.scope = ['build'];
+
+            return server.inject(options).then(response => {
+                assert.equal(response.statusCode, 403);
+            });
+        });
+
+        it('returns 204 if not found zip file', async () => {
+            options.url = `/builds/${mockBuildID}/SD_BAD_ARTIFACT.zip`;
+
+            return server.inject(options).then(response => {
+                assert.equal(response.statusCode, 204);
+            });
         });
     });
 });

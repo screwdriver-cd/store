@@ -224,6 +224,56 @@ exports.plugin = {
                         })
                     }
                 }
+            },
+            {
+                method: 'DELETE',
+                path: '/builds/{id}/{artifact*}',
+                handler: async (request, h) => {
+                    const buildId = request.params.id;
+                    const { artifact } = request.params;
+                    const id = `${buildId}-${artifact}`;
+
+                    if (usingS3) {
+                        try {
+                            await awsClient.removeObject(id);
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to delete artifact: ${err}`);
+                            throw err;
+                        }
+                    } else {
+                        try {
+                            await cache.drop(id);
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to delete artifact: ${err}`);
+                            throw err;
+                        }
+                    }
+
+                    return h.response().code(204);
+                },
+                options: {
+                    description: 'Delete build artifacts',
+                    notes: 'Delete an artifact from a specific build',
+                    tags: ['api', 'build'],
+                    auth: {
+                        strategies: ['token'],
+                        scope: ['unzip_worker']
+                    },
+                    plugins: {
+                        'hapi-swagger': {
+                            security: [{ token: [] }]
+                        }
+                    },
+                    validate: {
+                        params: joi.object({
+                            id: SCHEMA_BUILD_ID,
+                            artifact: SCHEMA_ARTIFACT_ID
+                        }),
+                        query: joi.object({
+                            token: TOKEN
+                        })
+                    }
+                }
             }
         ]);
     }
