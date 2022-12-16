@@ -1,9 +1,9 @@
 'use strict';
 
 const { assert } = require('chai');
-const Catbox = require('@hapi/catbox-memory');
+const { Engine: Catbox } = require('@hapi/catbox-memory');
 
-describe('server case', function() {
+describe('server case', function () {
     // Time not important. Only life important.
     this.timeout(5000);
 

@@ -6,7 +6,7 @@ const { assert } = require('chai');
 const sinon = require('sinon');
 const Hapi = require('@hapi/hapi');
 const mockery = require('mockery');
-const CatboxMemory = require('@hapi/catbox-memory');
+const { Engine: CatboxMemory } = require('@hapi/catbox-memory');
 const Boom = require('@hapi/boom');
 const mockBuildID = 1899999;
 
