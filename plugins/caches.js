@@ -6,15 +6,8 @@ const config = require('config');
 const AwsClient = require('../helpers/aws');
 const { streamToBuffer } = require('../helpers/helper');
 
-const SCHEMA_SCOPE_NAME = joi
-    .string()
-    .valid('events', 'jobs', 'pipelines')
-    .label('Scope Name');
-const SCHEMA_SCOPE_ID = joi
-    .number()
-    .integer()
-    .positive()
-    .label('Event/Job/Pipeline ID');
+const SCHEMA_SCOPE_NAME = joi.string().valid('events', 'jobs', 'pipelines').label('Scope Name');
+const SCHEMA_SCOPE_ID = joi.number().integer().positive().label('Event/Job/Pipeline ID');
 const SCHEMA_CACHE_NAME = joi.string().label('Cache Name');
 
 exports.plugin = {

@@ -8,11 +8,7 @@ const AwsClient = require('../helpers/aws');
 const { streamToBuffer } = require('../helpers/helper');
 const { getMimeFromFileName, displayableMimes } = require('../helpers/mime');
 
-const SCHEMA_BUILD_ID = joi
-    .number()
-    .integer()
-    .positive()
-    .label('Build ID');
+const SCHEMA_BUILD_ID = joi.number().integer().positive().label('Build ID');
 const SCHEMA_ARTIFACT_ID = joi.string().label('Artifact ID');
 const TYPE = joi
     .string()

@@ -1,6 +1,6 @@
 {
   "name": "screwdriver-store",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Pluggable Artifact Store (for logs, shared steps, templates, etc).",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "url": "git+https://github.com/screwdriver-cd/store.git"
   },
   "engines": {
-    "node": ">=8.9.0"
+    "node": ">=18.0.0"
   },
   "bin": {
     "screwdriver-store": "./bin/server"
@@ -44,38 +44,38 @@
     "debug": false
   },
   "devDependencies": {
-    "chai": "^4.3.4",
-    "eslint": "^7.5.0",
-    "eslint-config-screwdriver": "^5.0.1",
-    "js-yaml": "^3.6.1",
-    "jsonwebtoken": "^8.4.0",
-    "mocha": "^8.2.1",
+    "chai": "^4.3.7",
+    "eslint": "^8.28.0",
+    "eslint-config-screwdriver": "^7.0.0",
+    "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^8.5.1",
+    "mocha": "^10.1.0",
     "mocha-multi-reporters": "^1.5.1",
     "mocha-sonarqube-reporter": "^1.0.2",
-    "mockery": "^2.0.0",
-    "nyc": "^15.0.0",
-    "sinon": "^9.0.0"
+    "mockery": "^2.1.0",
+    "nyc": "^15.1.0",
+    "sinon": "^15.0.0"
   },
   "dependencies": {
-    "@hapi/boom": "^9.1.0",
-    "@hapi/catbox": "^11.1.0",
-    "@hapi/catbox-memory": "^5.0.0",
-    "@hapi/good": "^9.0.0",
-    "@hapi/good-console": "^9.0.0",
+    "@hapi/boom": "^10.0.0",
+    "@hapi/catbox": "^12.1.0",
+    "@hapi/catbox-memory": "^6.0.0",
+    "@hapi/good": "^9.0.1",
+    "@hapi/good-console": "^9.0.1",
     "@hapi/good-squeeze": "^6.0.0",
-    "@hapi/hapi": "^20.0.0",
-    "@hapi/hoek": "^9.0.4",
-    "@hapi/inert": "^6.0.1",
-    "@hapi/vision": "^6.0.0",
+    "@hapi/hapi": "^21.1.0",
+    "@hapi/hoek": "^10.0.1",
+    "@hapi/inert": "^7.0.0",
+    "@hapi/vision": "^7.0.0",
     "aws-sdk": "^2.361.0",
     "catbox-disk": "^3.0.2",
     "catbox-s3": "^4.0.0",
-    "config": "^1.30.0",
-    "hapi-auth-jwt2": "^10.1.0",
-    "hapi-swagger": "^14.2.4",
-    "joi": "^17.2.0",
-    "mime-types": "^2.1.25",
-    "screwdriver-data-schema": "^21.0.0",
-    "screwdriver-logger": "^1.0.0"
+    "config": "^3.3.8",
+    "hapi-auth-jwt2": "^10.2.0",
+    "hapi-swagger": "^15.0.0",
+    "joi": "^17.7.0",
+    "mime-types": "^2.1.35",
+    "screwdriver-data-schema": "^22.0.1",
+    "screwdriver-logger": "^2.0.0"
   }
 }
