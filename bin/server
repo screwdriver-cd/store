@@ -3,6 +3,9 @@
 'use strict';
 
 const logger = require('screwdriver-logger');
+// this env is needed to allow mutation of strategyConfig
+// https://github.com/node-config/node-config/wiki/Environment-Variables#allow_config_mutations
+process.env.ALLOW_CONFIG_MUTATIONS = 'true';
 const config = require('config');
 
 // Setup Caching strategy
