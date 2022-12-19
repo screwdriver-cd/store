@@ -7,17 +7,17 @@ const config = require('config');
 
 // Setup Caching strategy
 const strategyConfig = config.get('strategy');
+const { Engine: CatboxMemory } = require('@hapi/catbox-memory');
+const CatboxDisk = require('catbox-disk');
+const CatboxS3 = require('catbox-s3');
 const strategyMap = new Map([
-    ['memory', '@hapi/catbox-memory'],
-    ['disk', 'catbox-disk'],
-    ['s3', 'catbox-s3']
+    ['memory', CatboxMemory],
+    ['disk', CatboxDisk],
+    ['s3', CatboxS3]
 ]);
 const strategyModule = strategyMap.get(strategyConfig.plugin);
-
-// eslint-disable-next-line import/no-dynamic-require
-const strategy = require(strategyModule);
 const cache = {
-    engine: new strategy({
+    engine: new strategyModule({
         ...strategyConfig[strategyConfig.plugin]
     })
 };
