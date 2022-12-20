@@ -32,9 +32,9 @@ exports.plugin = {
         let awsClient;
 
         if (usingS3) {
-            const config = { ...strategyConfig.s3, segment };
+            const s3Config = { ...strategyConfig.s3, segment };
 
-            awsClient = new AwsClient(config);
+            awsClient = new AwsClient(s3Config);
         }
 
         server.expose('stats', cache.stats);
