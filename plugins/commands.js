@@ -29,8 +29,9 @@ exports.plugin = {
         let awsClient;
 
         if (usingS3) {
-            strategyConfig.s3.segment = segment;
-            awsClient = new AwsClient(strategyConfig.s3);
+            const config = { ...strategyConfig.s3, segment };
+
+            awsClient = new AwsClient(config);
         }
         const cache = server.cache({
             segment: 'commands',
