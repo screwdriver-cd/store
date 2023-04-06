@@ -24,7 +24,9 @@ const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
     'state',
     'diff',
     'deps',
-    'xml'
+    'xml',
+    'toml',
+    'editorconfig'
 ];
 
 /**
