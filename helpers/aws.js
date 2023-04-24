@@ -164,36 +164,38 @@ class AwsClient {
     }
 
     /**
-     * Upload object directly
-     * @method uploadAsBuffer
+     * upload command data as stream
+     * @method uploadCommandAsStream
      * @param {Object}              config               Config object
-     * @param {Object}              config.payload       Payload to upload
-     * @param {String}              config.objectKey       Path to Object
+     * @param {Stream}              config.payload       Payload to upload
+     * @param {String}              config.cacheKey      Path to cache
      * @return {Promise}
      */
-    uploadAsBuffer({ payload, objectKey }) {
+    uploadCommandAsStream({ payload, cacheKey }) {
+        // stream the data to s3
         const now = new Date();
         const metadata = {
             stored: now.toString(),
             'sd-store-lib': 'aws'
         };
-        let type = 'application/octet-stream';
-
-        if (payload.h) {
-            type = payload.h['content-type'];
-        }
-
+        const passthrough = new stream.PassThrough();
         const params = {
             Bucket: this.bucket,
-            Key: `${this.segment}/${objectKey}`,
-            ContentType: type,
+            Key: this.getStoragePathForKey(cacheKey),
+            Expires: new Date(),
+            ContentType: 'application/octet-stream',
             Metadata: metadata,
-            Body: payload.c
+            Body: passthrough
         };
-
         const options = {
             partSize: this.partSize
         };
+
+        const rStream = new stream.Readable();
+
+        rStream.push(payload);
+        rStream.push(null);
+        rStream.pipe(passthrough);
 
         return this.client.upload(params, options).promise();
     }

@@ -178,18 +178,16 @@ describe('aws helper test', () => {
         });
     });
 
-    it('upload commands directly', () => {
-        awsClient.segment = 'commands';
+    it('upload command as stream', () => {
         const uploadParam = {
             Bucket: testBucket,
-            Key: `commands/${objectKey}`
+            Key: `caches/${cacheKey}`
         };
         const uploadOption = {
             partSize
         };
 
-        // eslint-disable-next-line new-cap
-        return awsClient.uploadAsBuffer({ payload: Buffer.from('hello world', 'utf8'), objectKey }).then(() => {
+        return awsClient.uploadCommandAsStream({ cacheKey, payload: Buffer.from('hellow world', 'utf8') }).then(() => {
             assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam), sinon.match(uploadOption));
         });
     });

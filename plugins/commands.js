@@ -125,7 +125,7 @@ exports.plugin = {
 
                     try {
                         if (usingS3) {
-                            await awsClient.uploadAsBuffer({ payload: contents, objectKey: id });
+                            await awsClient.uploadCommandAsStream({ payload: request.payload, cacheKey: id });
                         } else {
                             await cache.set(id, contents, 0);
                         }
