@@ -325,7 +325,8 @@ describe('commands plugin test using s3', () => {
             getDownloadStream: getDownloadStreamMock,
             uploadCmdAsStream: uploadAsStreamMock,
             getDownloadObject: getDownloadMock,
-            uploadAsBuffer: uploadDirectMock
+            uploadAsBuffer: uploadDirectMock,
+            uploadCommandAsStream: uploadDirectMock
         });
 
         data = {
