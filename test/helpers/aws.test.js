@@ -179,17 +179,28 @@ describe('aws helper test', () => {
     });
 
     it('upload command as stream', () => {
+        const awsClientCommand = new AwsClient({
+            accessKeyId,
+            secretAccessKey,
+            region,
+            s3ForcePathStyle,
+            bucket: testBucket,
+            segment: 'command',
+            partSize
+        });
         const uploadParam = {
             Bucket: testBucket,
-            Key: `caches/${cacheKey}`
+            Key: `command/${cacheKey}`
         };
         const uploadOption = {
             partSize
         };
 
-        return awsClient.uploadCommandAsStream({ cacheKey, payload: Buffer.from('hellow world', 'utf8') }).then(() => {
-            assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam), sinon.match(uploadOption));
-        });
+        return awsClientCommand
+            .uploadCommandAsStream({ cacheKey, payload: Buffer.from('hellow world', 'utf8') })
+            .then(() => {
+                assert.calledWith(clientMock.prototype.upload, sinon.match(uploadParam), sinon.match(uploadOption));
+            });
     });
 
     it('resolves a download stream', () => {
