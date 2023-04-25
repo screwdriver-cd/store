@@ -296,7 +296,6 @@ describe('commands plugin test using s3', () => {
     let uploadAsStreamMock;
     let deleteObjMock;
     let getDownloadMock;
-    let uploadDirectMock;
     let data;
 
     before(() => {
@@ -317,16 +316,13 @@ describe('commands plugin test using s3', () => {
         uploadAsStreamMock = sinon.stub().resolves(null);
         deleteObjMock = sinon.stub().resolves(null);
         getDownloadMock = sinon.stub().resolves(null);
-        uploadDirectMock = sinon.stub().resolves(null);
 
         awsClientMock = sinon.stub().returns({
             updateLastModified: sinon.stub().yields(null),
             removeObject: deleteObjMock,
             getDownloadStream: getDownloadStreamMock,
-            uploadCmdAsStream: uploadAsStreamMock,
             getDownloadObject: getDownloadMock,
-            uploadAsBuffer: uploadDirectMock,
-            uploadCommandAsStream: uploadDirectMock
+            uploadCommandAsStream: uploadAsStreamMock
         });
 
         data = {
