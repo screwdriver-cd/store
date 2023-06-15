@@ -308,7 +308,7 @@ describe('builds plugin test', () => {
 
             assert.equal(getResponse.statusCode, 200);
             assert.equal(getResponse.headers['x-foo'], 'bar');
-            assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
+            assert.equal(getResponse.headers['content-type'], 'application/octet-stream');
             assert.isNotOk(getResponse.headers.ignore);
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
@@ -330,7 +330,7 @@ describe('builds plugin test', () => {
         it('saves an artifact of Japanese filename', async () => {
             options.url = `/builds/${mockBuildID}/日本語.txt`;
 
-            options.headers['content-type'] = 'application/x-ndjson';
+            options.headers['content-type'] = 'text/plain; charset=utf-8';
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
@@ -348,7 +348,7 @@ describe('builds plugin test', () => {
 
             assert.equal(getResponse.statusCode, 200);
             assert.equal(getResponse.headers['x-foo'], 'bar');
-            assert.equal(getResponse.headers['content-type'], 'application/x-ndjson');
+            assert.equal(getResponse.headers['content-type'], 'text/plain; charset=utf-8');
             assert.isNotOk(getResponse.headers.ignore);
             assert.equal(getResponse.result, 'THIS IS A TEST');
 
