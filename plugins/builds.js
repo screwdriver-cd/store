@@ -104,6 +104,16 @@ exports.plugin = {
                         if (!displayableMimes.includes(mime)) {
                             response.headers['content-disposition'] = `inline; filename="${encodeURI(fileName)}"`;
                         }
+                    } else {
+                        const fileExt = fileName.split('.').pop();
+                        const raw = true;
+                        const mime = getMimeFromFileName(fileExt, fileName, raw);
+
+                        response.headers['content-type'] = mime;
+
+                        if (!displayableMimes.includes(mime)) {
+                            response.headers['content-disposition'] = `inline; filename="${encodeURI(fileName)}"`;
+                        } 
                     }
 
                     return response;
