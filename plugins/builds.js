@@ -113,7 +113,7 @@ exports.plugin = {
 
                         if (!displayableMimes.includes(mime)) {
                             response.headers['content-disposition'] = `inline; filename="${encodeURI(fileName)}"`;
-                        } 
+                        }
                     }
 
                     return response;
