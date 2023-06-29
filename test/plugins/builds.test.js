@@ -290,7 +290,7 @@ describe('builds plugin test', () => {
         it('saves an artifact', async () => {
             options.url = `/builds/${mockBuildID}/foo`;
 
-            options.headers['content-type'] = 'application/x-ndjson';
+            options.headers['content-type'] = 'application/octet-stream';
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 202);
