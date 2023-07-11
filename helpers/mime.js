@@ -3,7 +3,6 @@
 const mime = require('mime-types');
 
 const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
-    'js',
     'c',
     'cpp',
     'cs',
@@ -34,14 +33,9 @@ const KNOWN_FILE_EXTS_IN_TEXT_FORMAT = [
  * @method getMimeFromFileName
  * @param  {String}  fileExtension  File extension (e.g. css, txt, html)
  * @param  {String}  fileName       File name      (e.g. dockerfile, main)
- * @param  {Boolean} raw            raw data type  (e.g. application/javascript instead of text/javascript)
  * @return {String}  MIME Type      eg. text/html, text/plain
  */
-function getMimeFromFileName(fileExtension, fileName = '', raw = false) {
-    if (raw === true) {
-        return mime.lookup(fileExtension) || '';
-    }
-
+function getMimeFromFileName(fileExtension, fileName = '') {
     if (fileName.toLowerCase().endsWith('file')) {
         return 'text/plain';
     }
