@@ -75,7 +75,7 @@
     "hapi-swagger": "^15.0.0",
     "joi": "^17.7.0",
     "mime-types": "^2.1.35",
-    "screwdriver-data-schema": "^22.0.1",
+    "screwdriver-data-schema": "^23.0.4",
     "screwdriver-logger": "^2.0.0"
   }
 }
