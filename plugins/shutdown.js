@@ -30,7 +30,7 @@ function promiseTimeout(fn, timeout) {
 /**
  * Hapi plugin to handle serve graceful shutdown
  * @method register
- * @param  {Hapi.Server}    server
+ * @param  {Hapi.Server} server
  */
 const shutdownPlugin = {
     name: 'shutdown',
