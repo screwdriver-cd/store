@@ -17,5 +17,11 @@ RUN ln -s /usr/src/app/node_modules/screwdriver-store/config /config
 # Expose the web service port
 EXPOSE 80
 
+# Add Tini
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+ENTRYPOINT ["/tini", "--"]
+
 # Run the service
-CMD [ "npm", "start" ]
+CMD [ "node", "./bin/server" ]
