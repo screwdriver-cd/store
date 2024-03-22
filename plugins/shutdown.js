@@ -28,7 +28,7 @@ function promiseTimeout(fn, timeout) {
 }
 
 /**
- * Hapi plugin to handle serve graceful shutdown
+ * Hapi plugin to handle server graceful shutdown
  * @method register
  * @param  {Hapi.Server} server
  */
