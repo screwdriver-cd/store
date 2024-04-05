@@ -7,7 +7,7 @@ ARG VERSION=latest
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-# Install Screwdriver API
+# Install Screwdriver Store
 RUN npm install screwdriver-store@$VERSION
 WORKDIR /usr/src/app/node_modules/screwdriver-store
 
