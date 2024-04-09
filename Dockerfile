@@ -7,7 +7,7 @@ ARG VERSION=latest
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-# Install Screwdriver API
+# Install Screwdriver Store
 RUN npm install screwdriver-store@$VERSION
 WORKDIR /usr/src/app/node_modules/screwdriver-store
 
@@ -17,11 +17,10 @@ RUN ln -s /usr/src/app/node_modules/screwdriver-store/config /config
 # Expose the web service port
 EXPOSE 80
 
-# Add Tini
-ENV TINI_VERSION v0.19.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-ENTRYPOINT ["/tini", "--"]
+# Add dumb-init
+RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64
+RUN chmod +x /usr/local/bin/dumb-init
+ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
 
 # Run the service
 CMD [ "node", "./bin/server" ]
