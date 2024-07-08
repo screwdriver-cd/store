@@ -372,6 +372,26 @@ exports.plugin = {
                             id: SCHEMA_SCOPE_ID,
                             cacheName: SCHEMA_CACHE_NAME
                         })
+                    },
+                    ext: {
+                        onPreAuth: {
+                            method: (request, h) => {
+                                const contentLength = request.headers['Content-Length'];
+                                const expectHeader = request.headers.expect;
+
+                                if (expectHeader && expectHeader.toLowerCase() === '100-continue') {
+                                    if (contentLength && parseInt(contentLength, 10) > options.maxByteSize) {
+                                        throw boom.entityTooLarge(
+                                            `Payload content length greater than maximum allowed: ${options.maxByteSize}`
+                                        );
+                                    } else {
+                                        return h.response().code(100).takeover();
+                                    }
+                                }
+
+                                return h.continue;
+                            }
+                        }
                     }
                 }
             },
