@@ -39,7 +39,8 @@ describe('server case', function () {
                         engine: new Catbox()
                     },
                     auth: {
-                        jwtPublicKey: '12345'
+                        jwtPublicKey: '12345',
+                        jwtMaxAge: '1h'
                     },
                     commands: {},
                     ecosystem,

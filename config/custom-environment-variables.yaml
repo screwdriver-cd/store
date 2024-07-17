@@ -4,6 +4,7 @@
 auth:
     # A public key for verifying JWTs signed by api.screwdriver.cd
     jwtPublicKey: SECRET_JWT_PUBLIC_KEY
+    jwtMaxAge: JWT_MAX_AGE
 
 httpd:
     # Port to listen on
