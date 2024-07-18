@@ -295,14 +295,16 @@ exports.plugin = {
                     ext: {
                         onPreAuth: {
                             method: (request, h) => {
-                                const contentLength = request.headers['Content-Length'];
+                                const contentLength = request.headers['content-length'];
                                 const expectHeader = request.headers.expect;
 
                                 if (expectHeader && expectHeader.toLowerCase() === '100-continue') {
                                     if (contentLength && parseInt(contentLength, 10) > options.maxByteSize) {
-                                        throw boom.entityTooLarge(
-                                            `Payload content length greater than maximum allowed: ${options.maxByteSize}`
+                                        request.log(
+                                            'Payload content length greater than maximum allowed',
+                                            options.maxByteSize
                                         );
+                                        throw boom.entityTooLarge();
                                     } else {
                                         request.raw.res.writeContinue();
                                     }
