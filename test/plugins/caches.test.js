@@ -847,7 +847,7 @@ describe('caches plugin test using s3', () => {
                 plugin,
                 options: {
                     expiresInSec: '100',
-                    maxByteSize: '5368709120'
+                    maxByteSize: 10 * 1024 * 1024
                 }
             })
             .then(() => server.start());
@@ -931,6 +931,7 @@ describe('caches plugin test using s3', () => {
                 headers: {
                     'x-foo': 'bar',
                     'content-type': 'text/plain',
+                    expect: '100-continue',
                     ignore: 'true'
                 },
                 auth: {
@@ -977,6 +978,23 @@ describe('caches plugin test using s3', () => {
             const putResponse = await server.inject(options);
 
             assert.equal(putResponse.statusCode, 503);
+        });
+
+        it('returns 100 Continue if Expect header is set and payload size is within limit', async () => {
+            options.url = `/caches/events/${mockEventID}/foo`;
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 202);
+        });
+
+        it('returns 413 if Expect header is set and payload size exceeds limit', async () => {
+            options.url = `/caches/events/${mockEventID}/foo`;
+            options.payload = 'A'.repeat(1024 * 1024 * 11);
+
+            const putResponse = await server.inject(options);
+
+            assert.equal(putResponse.statusCode, 413);
         });
     });
 
