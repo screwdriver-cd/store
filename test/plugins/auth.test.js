@@ -19,7 +19,8 @@ describe('auth plugin test', () => {
         plugin = require('../../plugins/auth');
 
         options = {
-            jwtPublicKey: fs.readFileSync(path.join(__dirname, './data/auth.test.crt'), 'utf8')
+            jwtPublicKey: fs.readFileSync(path.join(__dirname, './data/auth.test.crt'), 'utf8'),
+            jwtMaxAge: '1h'
         };
 
         server = Hapi.server({
@@ -89,5 +90,45 @@ describe('auth plugin test', () => {
 
         assert.equal(200, response.statusCode);
         assert.equal('success', response.result);
+    });
+
+    it('jwt expiration', async () => {
+        const privateKey = fs.readFileSync(path.join(__dirname, './data/auth.test.key'), 'utf8');
+        const token = jwt.sign({ data: 'some data' }, privateKey, {
+            algorithm: 'RS256'
+        });
+
+        let response;
+
+        await server.register({
+            plugin,
+            options: { ...options, jwtMaxAge: '0h' }
+        });
+
+        server.route({
+            method: 'GET',
+            path: '/',
+            options: {
+                auth: 'token'
+            },
+            handler() {
+                return 'success';
+            }
+        });
+
+        try {
+            response = await server.inject({
+                method: 'GET',
+                url: '/',
+                headers: {
+                    Authorization: token
+                }
+            });
+        } catch (err) {
+            assert.fail(err);
+        }
+
+        assert.equal(401, response.statusCode);
+        assert.equal('Unauthorized', response.statusMessage);
     });
 });
