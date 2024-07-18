@@ -6,6 +6,7 @@ auth:
         -----BEGIN PUBLIC KEY-----
         INSERT STUFF HERE
         -----END PUBLIC KEY-----
+    jwtMaxAge: 13h
 
 httpd:
     # Port to listen on

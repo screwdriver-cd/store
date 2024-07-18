@@ -29,7 +29,8 @@ exports.plugin = {
         const pluginOptions = joi.attempt(
             options,
             joi.object().keys({
-                jwtPublicKey: joi.string().required()
+                jwtPublicKey: joi.string().required(),
+                jwtMaxAge: joi.string().required()
             }),
             'Invalid config for auth plugin'
         );
@@ -40,7 +41,7 @@ exports.plugin = {
             key: pluginOptions.jwtPublicKey,
             verifyOptions: {
                 algorithms: ['RS256'],
-                maxAge: '13h'
+                maxAge: pluginOptions.jwtMaxAge
             },
             // This function is run once the Token has been decoded with signature
             validate
