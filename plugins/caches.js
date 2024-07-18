@@ -305,9 +305,9 @@ exports.plugin = {
                                             options.maxByteSize
                                         );
                                         throw boom.entityTooLarge();
-                                    } else {
-                                        request.raw.res.writeContinue();
                                     }
+
+                                    request.raw.res.writeContinue();
                                 }
 
                                 return h.continue;
