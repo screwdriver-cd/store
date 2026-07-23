@@ -1,5 +1,7 @@
 'use strict';
 
+/* global globalThis */
+
 const joi = require('joi');
 const boom = require('@hapi/boom');
 const schema = require('screwdriver-data-schema');
@@ -10,6 +12,43 @@ const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 const config = require('config');
 const AwsClient = require('../helpers/aws');
+
+/**
+ * Look up the authoritative owning pipelineId for a command from the API.
+ *
+ * Command binaries are fetched by builds directly from the store, so the store
+ * cannot rely on the API's route-level ownership check. This consults the
+ * command's API record (which carries the owning pipelineId) so the store can
+ * reject a mutation coming from a different pipeline.
+ * @method  getCommandOwner
+ * @param   {Object}  arg
+ * @param   {String}  arg.apiUrl         Base URL of the Screwdriver API
+ * @param   {String}  arg.namespace      Command namespace
+ * @param   {String}  arg.name           Command name
+ * @param   {String}  arg.version        Command version
+ * @param   {String}  arg.authorization  Authorization header to forward
+ * @returns {Promise<Number|null>}       Owning pipelineId, or null when the command has no record yet
+ */
+async function getCommandOwner({ apiUrl, namespace, name, version, authorization }) {
+    const response = await globalThis.fetch(`${apiUrl}/v1/commands/${namespace}/${name}/${version}`, {
+        method: 'GET',
+        headers: { authorization }
+    });
+
+    // No record yet — the command is unowned (e.g. first publish, before the
+    // API persists the record), so there is nothing to protect.
+    if (response.status === 404) {
+        return null;
+    }
+
+    if (response.status !== 200) {
+        throw new Error(`Command ownership lookup returned status ${response.status}`);
+    }
+
+    const command = await response.json();
+
+    return command.pipelineId;
+}
 
 exports.plugin = {
     name: 'commands',
@@ -123,6 +162,33 @@ exports.plugin = {
                             `bytes with headers ${JSON.stringify(contents.h)}`
                     );
 
+                    // Reject an overwrite of a command owned by a different
+                    // pipeline. Builds reach this route directly (bypassing the
+                    // API's ownership check), so the store must verify ownership
+                    // against the command's authoritative API record.
+                    const apiUrl = config.get('ecosystem').api;
+
+                    if (apiUrl) {
+                        let ownerPipelineId;
+
+                        try {
+                            ownerPipelineId = await getCommandOwner({
+                                apiUrl,
+                                namespace,
+                                name,
+                                version,
+                                authorization: request.headers.authorization
+                            });
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to verify command ownership: ${err}`);
+                            throw boom.serverUnavailable('Failed to verify command ownership');
+                        }
+
+                        if (ownerPipelineId !== null && ownerPipelineId !== pipelineId) {
+                            throw boom.forbidden('Not allowed to overwrite this command');
+                        }
+                    }
+
                     try {
                         if (usingS3) {
                             await awsClient.uploadCommandAsStream({ payload: request.payload, cacheKey: id });
@@ -166,8 +232,36 @@ exports.plugin = {
                 method: 'DELETE',
                 path: '/commands/{namespace}/{name}/{version}',
                 handler: async (request, h) => {
+                    const { pipelineId } = request.auth.credentials;
                     const { namespace, name, version } = request.params;
                     const id = `${namespace}-${name}-${version}`;
+
+                    // Build credentials carry a pipelineId; reject a delete of a
+                    // command owned by a different pipeline. User-scope deletes
+                    // arrive via the API, which authorizes them before
+                    // forwarding here and carry no pipelineId.
+                    const apiUrl = config.get('ecosystem').api;
+
+                    if (apiUrl && pipelineId !== undefined && pipelineId !== null) {
+                        let ownerPipelineId;
+
+                        try {
+                            ownerPipelineId = await getCommandOwner({
+                                apiUrl,
+                                namespace,
+                                name,
+                                version,
+                                authorization: request.headers.authorization
+                            });
+                        } catch (err) {
+                            request.log([id, 'error'], `Failed to verify command ownership: ${err}`);
+                            throw boom.serverUnavailable('Failed to verify command ownership');
+                        }
+
+                        if (ownerPipelineId !== null && ownerPipelineId !== pipelineId) {
+                            throw boom.forbidden('Not allowed to delete this command');
+                        }
+                    }
 
                     try {
                         if (usingS3) {
