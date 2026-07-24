@@ -10,6 +10,7 @@ const SCHEMA_COMMAND_NAME = schema.config.command.name;
 const SCHEMA_COMMAND_VERSION = schema.config.command.version;
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
+const OWNERSHIP_LOOKUP_TIMEOUT_MS = 10 * 1000; // bound the API round-trip so a slow API fails closed promptly
 const config = require('config');
 const AwsClient = require('../helpers/aws');
 
@@ -32,7 +33,9 @@ const AwsClient = require('../helpers/aws');
 async function getCommandOwner({ apiUrl, namespace, name, version, authorization }) {
     const response = await globalThis.fetch(`${apiUrl}/v1/commands/${namespace}/${name}/${version}`, {
         method: 'GET',
-        headers: { authorization }
+        headers: { authorization },
+        // A hung (not down) API would otherwise stall every write/delete; bound it.
+        signal: AbortSignal.timeout(OWNERSHIP_LOOKUP_TIMEOUT_MS)
     });
 
     // No record yet — the command is unowned (e.g. first publish, before the
@@ -48,6 +51,54 @@ async function getCommandOwner({ apiUrl, namespace, name, version, authorization
     const command = await response.json();
 
     return command.pipelineId;
+}
+
+/**
+ * Reject the request unless the caller's pipeline owns the target command.
+ *
+ * Fails closed: an unconfigured API URL, a lookup error, a timeout, or an
+ * owner mismatch all block the mutation rather than silently allowing it. A
+ * command with no API record yet (404) is treated as unowned so first
+ * publishes still succeed.
+ * @method  assertCommandOwnership
+ * @param   {Object}  arg
+ * @param   {Object}  arg.request        Hapi request (for auth header + logging)
+ * @param   {String}  arg.namespace      Command namespace
+ * @param   {String}  arg.name           Command name
+ * @param   {String}  arg.version        Command version
+ * @param   {Number}  arg.pipelineId     Owning pipelineId from the caller's credentials
+ * @param   {String}  arg.action         Verb for the forbidden message (e.g. 'overwrite', 'delete')
+ * @returns {Promise}
+ */
+async function assertCommandOwnership({ request, namespace, name, version, pipelineId, action }) {
+    const id = `${namespace}-${name}-${version}`;
+    const apiUrl = config.get('ecosystem').api;
+
+    if (!apiUrl) {
+        request.log([id, 'error'], 'Cannot verify command ownership: ecosystem.api is not configured');
+        throw boom.serverUnavailable('Command ownership verification is not configured');
+    }
+
+    let ownerPipelineId;
+
+    try {
+        ownerPipelineId = await getCommandOwner({
+            apiUrl,
+            namespace,
+            name,
+            version,
+            authorization: request.headers.authorization
+        });
+    } catch (err) {
+        request.log([id, 'error'], `Failed to verify command ownership: ${err}`);
+        throw boom.serverUnavailable('Failed to verify command ownership');
+    }
+
+    // Normalize both sides: the API body and the JWT credentials could carry
+    // the id as a number or a numeric string.
+    if (ownerPipelineId !== null && Number(ownerPipelineId) !== Number(pipelineId)) {
+        throw boom.forbidden(`Not allowed to ${action} this command`);
+    }
 }
 
 exports.plugin = {
@@ -166,28 +217,14 @@ exports.plugin = {
                     // pipeline. Builds reach this route directly (bypassing the
                     // API's ownership check), so the store must verify ownership
                     // against the command's authoritative API record.
-                    const apiUrl = config.get('ecosystem').api;
-
-                    if (apiUrl) {
-                        let ownerPipelineId;
-
-                        try {
-                            ownerPipelineId = await getCommandOwner({
-                                apiUrl,
-                                namespace,
-                                name,
-                                version,
-                                authorization: request.headers.authorization
-                            });
-                        } catch (err) {
-                            request.log([id, 'error'], `Failed to verify command ownership: ${err}`);
-                            throw boom.serverUnavailable('Failed to verify command ownership');
-                        }
-
-                        if (ownerPipelineId !== null && ownerPipelineId !== pipelineId) {
-                            throw boom.forbidden('Not allowed to overwrite this command');
-                        }
-                    }
+                    await assertCommandOwnership({
+                        request,
+                        namespace,
+                        name,
+                        version,
+                        pipelineId,
+                        action: 'overwrite'
+                    });
 
                     try {
                         if (usingS3) {
@@ -240,27 +277,15 @@ exports.plugin = {
                     // command owned by a different pipeline. User-scope deletes
                     // arrive via the API, which authorizes them before
                     // forwarding here and carry no pipelineId.
-                    const apiUrl = config.get('ecosystem').api;
-
-                    if (apiUrl && pipelineId !== undefined && pipelineId !== null) {
-                        let ownerPipelineId;
-
-                        try {
-                            ownerPipelineId = await getCommandOwner({
-                                apiUrl,
-                                namespace,
-                                name,
-                                version,
-                                authorization: request.headers.authorization
-                            });
-                        } catch (err) {
-                            request.log([id, 'error'], `Failed to verify command ownership: ${err}`);
-                            throw boom.serverUnavailable('Failed to verify command ownership');
-                        }
-
-                        if (ownerPipelineId !== null && ownerPipelineId !== pipelineId) {
-                            throw boom.forbidden('Not allowed to delete this command');
-                        }
+                    if (pipelineId !== undefined && pipelineId !== null) {
+                        await assertCommandOwnership({
+                            request,
+                            namespace,
+                            name,
+                            version,
+                            pipelineId,
+                            action: 'delete'
+                        });
                     }
 
                     try {

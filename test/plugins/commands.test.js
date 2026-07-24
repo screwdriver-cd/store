@@ -18,6 +18,7 @@ describe('commands plugin test', () => {
     let plugin;
     let server;
     let configMock;
+    let fetchStub;
 
     before(() => {
         mockery.enable({
@@ -27,12 +28,13 @@ describe('commands plugin test', () => {
     });
 
     beforeEach(async () => {
-        configMock = {
-            get: sinon.stub().returns({
-                plugin: 'memory'
-            })
-        };
+        configMock = { get: sinon.stub() };
+        configMock.get.withArgs('strategy').returns({ plugin: 'memory' });
+        configMock.get.withArgs('ecosystem').returns({ api: 'https://api.test' });
         mockery.registerMock('config', configMock);
+
+        // Default: command is unowned (no API record) so writes/deletes are allowed.
+        fetchStub = sinon.stub(globalThis, 'fetch').resolves({ status: 404 });
 
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/commands');
@@ -58,6 +60,7 @@ describe('commands plugin test', () => {
     afterEach(async () => {
         await server.stop();
         server = null;
+        fetchStub.restore();
         mockery.deregisterAll();
         mockery.resetCache();
     });
@@ -298,6 +301,7 @@ describe('commands plugin test using s3', () => {
     let uploadAsStreamMock;
     let deleteObjMock;
     let getDownloadMock;
+    let fetchStub;
     let data;
 
     before(() => {
@@ -308,12 +312,13 @@ describe('commands plugin test using s3', () => {
     });
 
     beforeEach(() => {
-        configMock = {
-            get: sinon.stub().returns({
-                plugin: 's3',
-                s3: {}
-            })
-        };
+        configMock = { get: sinon.stub() };
+        configMock.get.withArgs('strategy').returns({ plugin: 's3', s3: {} });
+        configMock.get.withArgs('ecosystem').returns({ api: 'https://api.test' });
+
+        // Default: command is unowned (no API record) so writes/deletes are allowed.
+        fetchStub = sinon.stub(globalThis, 'fetch').resolves({ status: 404 });
+
         getDownloadStreamMock = sinon.stub().resolves(null);
         uploadAsStreamMock = sinon.stub().resolves(null);
         deleteObjMock = sinon.stub().resolves(null);
@@ -353,6 +358,7 @@ describe('commands plugin test using s3', () => {
     afterEach(async () => {
         await server.stop();
         server = null;
+        fetchStub.restore();
         mockery.deregisterAll();
         mockery.resetCache();
     });
@@ -624,6 +630,23 @@ describe('commands plugin ownership enforcement', () => {
 
             return server.inject(postOptions()).then(response => {
                 assert.equal(response.statusCode, 503);
+            });
+        });
+
+        it('fails closed with 503 when ecosystem.api is not configured', () => {
+            configMock.get.withArgs('ecosystem').returns({});
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 503);
+                assert.notCalled(fetchStub);
+            });
+        });
+
+        it('allows the owner when the API returns pipelineId as a numeric string', () => {
+            fetchStub.resolves(ownerResponse('123'));
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 202);
             });
         });
     });
