@@ -1,5 +1,7 @@
 'use strict';
 
+/* global globalThis */
+
 const { assert } = require('chai');
 const sinon = require('sinon');
 const Hapi = require('@hapi/hapi');
@@ -16,6 +18,7 @@ describe('commands plugin test', () => {
     let plugin;
     let server;
     let configMock;
+    let fetchStub;
 
     before(() => {
         mockery.enable({
@@ -25,12 +28,13 @@ describe('commands plugin test', () => {
     });
 
     beforeEach(async () => {
-        configMock = {
-            get: sinon.stub().returns({
-                plugin: 'memory'
-            })
-        };
+        configMock = { get: sinon.stub() };
+        configMock.get.withArgs('strategy').returns({ plugin: 'memory' });
+        configMock.get.withArgs('ecosystem').returns({ api: 'https://api.test' });
         mockery.registerMock('config', configMock);
+
+        // Default: command is unowned (no API record) so writes/deletes are allowed.
+        fetchStub = sinon.stub(globalThis, 'fetch').resolves({ status: 404 });
 
         // eslint-disable-next-line global-require
         plugin = require('../../plugins/commands');
@@ -56,6 +60,7 @@ describe('commands plugin test', () => {
     afterEach(async () => {
         await server.stop();
         server = null;
+        fetchStub.restore();
         mockery.deregisterAll();
         mockery.resetCache();
     });
@@ -296,6 +301,7 @@ describe('commands plugin test using s3', () => {
     let uploadAsStreamMock;
     let deleteObjMock;
     let getDownloadMock;
+    let fetchStub;
     let data;
 
     before(() => {
@@ -306,12 +312,13 @@ describe('commands plugin test using s3', () => {
     });
 
     beforeEach(() => {
-        configMock = {
-            get: sinon.stub().returns({
-                plugin: 's3',
-                s3: {}
-            })
-        };
+        configMock = { get: sinon.stub() };
+        configMock.get.withArgs('strategy').returns({ plugin: 's3', s3: {} });
+        configMock.get.withArgs('ecosystem').returns({ api: 'https://api.test' });
+
+        // Default: command is unowned (no API record) so writes/deletes are allowed.
+        fetchStub = sinon.stub(globalThis, 'fetch').resolves({ status: 404 });
+
         getDownloadStreamMock = sinon.stub().resolves(null);
         uploadAsStreamMock = sinon.stub().resolves(null);
         deleteObjMock = sinon.stub().resolves(null);
@@ -351,6 +358,7 @@ describe('commands plugin test using s3', () => {
     afterEach(async () => {
         await server.stop();
         server = null;
+        fetchStub.restore();
         mockery.deregisterAll();
         mockery.resetCache();
     });
@@ -508,6 +516,173 @@ describe('commands plugin test using s3', () => {
             return server.inject(deleteOptions).then(deleteResponse => {
                 assert.equal(deleteResponse.statusCode, 204);
             });
+        });
+    });
+});
+
+describe('commands plugin ownership enforcement', () => {
+    const mockCommandNamespace = 'foo';
+    const mockCommandName = 'bar';
+    const mockCommandVersion = '1.2.3';
+    const apiUrl = 'https://api.test';
+    const commandUrl = `/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`;
+    let plugin;
+    let server;
+    let configMock;
+    let fetchStub;
+
+    before(() => {
+        mockery.enable({
+            useCleanCache: true,
+            warnOnUnregistered: false
+        });
+    });
+
+    beforeEach(async () => {
+        configMock = { get: sinon.stub() };
+        configMock.get.withArgs('strategy').returns({ plugin: 'memory' });
+        configMock.get.withArgs('ecosystem').returns({ api: apiUrl });
+        mockery.registerMock('config', configMock);
+
+        fetchStub = sinon.stub(globalThis, 'fetch');
+
+        // eslint-disable-next-line global-require
+        plugin = require('../../plugins/commands');
+
+        server = Hapi.server({
+            cache: {
+                engine: new CatboxMemory({
+                    maxByteSize: 512
+                })
+            },
+            port: 1234
+        });
+        server.auth.scheme('custom', () => ({
+            authenticate: (request, h) => h.authenticated()
+        }));
+        server.auth.strategy('token', 'custom');
+
+        await server.register({ plugin });
+        await server.start();
+    });
+
+    afterEach(async () => {
+        await server.stop();
+        server = null;
+        fetchStub.restore();
+        mockery.deregisterAll();
+        mockery.resetCache();
+    });
+
+    after(() => {
+        mockery.disable();
+    });
+
+    const buildAuth = (pipelineId = 123) => ({
+        strategy: 'token',
+        credentials: {
+            scope: ['build'],
+            pipelineId
+        }
+    });
+
+    const ownerResponse = pipelineId => ({
+        status: 200,
+        json: () => Promise.resolve({ pipelineId })
+    });
+
+    describe('POST', () => {
+        const postOptions = () => ({
+            method: 'POST',
+            payload: 'THIS IS A TEST',
+            headers: { 'content-type': 'text/plain', authorization: 'Bearer token' },
+            auth: buildAuth(123),
+            url: commandUrl
+        });
+
+        it('returns 403 when the command is owned by a different pipeline', () => {
+            fetchStub.resolves(ownerResponse(999));
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 403);
+                assert.calledOnce(fetchStub);
+            });
+        });
+
+        it('returns 202 when the owning pipeline re-uploads', () => {
+            fetchStub.resolves(ownerResponse(123));
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 202);
+            });
+        });
+
+        it('returns 202 on first publish when no record exists yet', () => {
+            fetchStub.resolves({ status: 404 });
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 202);
+            });
+        });
+
+        it('returns 503 when the ownership lookup fails', () => {
+            fetchStub.resolves({ status: 500 });
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 503);
+            });
+        });
+
+        it('fails closed with 503 when ecosystem.api is not configured', () => {
+            configMock.get.withArgs('ecosystem').returns({});
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 503);
+                assert.notCalled(fetchStub);
+            });
+        });
+
+        it('allows the owner when the API returns pipelineId as a numeric string', () => {
+            fetchStub.resolves(ownerResponse('123'));
+
+            return server.inject(postOptions()).then(response => {
+                assert.equal(response.statusCode, 202);
+            });
+        });
+    });
+
+    describe('DELETE', () => {
+        const deleteOptions = auth => ({
+            method: 'DELETE',
+            headers: { authorization: 'Bearer token' },
+            auth,
+            url: commandUrl
+        });
+
+        it("returns 403 when a build deletes another pipeline's command", () => {
+            fetchStub.resolves(ownerResponse(999));
+
+            return server.inject(deleteOptions(buildAuth(123))).then(response => {
+                assert.equal(response.statusCode, 403);
+                assert.calledOnce(fetchStub);
+            });
+        });
+
+        it('returns 204 when the owning pipeline deletes its command', () => {
+            fetchStub.resolves(ownerResponse(123));
+
+            return server.inject(deleteOptions(buildAuth(123))).then(response => {
+                assert.equal(response.statusCode, 204);
+            });
+        });
+
+        it('skips the ownership lookup for user-scope deletes', () => {
+            return server
+                .inject(deleteOptions({ strategy: 'token', credentials: { scope: ['user'] } }))
+                .then(response => {
+                    assert.equal(response.statusCode, 204);
+                    assert.notCalled(fetchStub);
+                });
         });
     });
 });
