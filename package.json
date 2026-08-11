@@ -47,7 +47,7 @@
     "chai": "^4.3.7",
     "eslint": "^8.57.0",
     "eslint-config-screwdriver": "^8.0.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^5.2.3",
     "jsonwebtoken": "^8.5.1",
     "mocha": "^10.1.0",
     "mocha-multi-reporters": "^1.5.1",
@@ -72,10 +72,15 @@
     "catbox-s3": "^4.0.0",
     "config": "^3.3.8",
     "hapi-auth-jwt2": "^10.2.0",
-    "hapi-swagger": "^15.0.0",
+    "hapi-swagger": "^17.3.2",
     "joi": "^17.7.0",
     "mime-types": "^2.1.35",
     "screwdriver-data-schema": "^25.0.0",
     "screwdriver-logger": "^3.0.0"
+  },
+  "overrides": {
+    "@apidevtools/json-schema-ref-parser": {
+      "js-yaml": "^5.2.3"
+    }
   }
 }
