@@ -19,6 +19,21 @@ const TOKEN = joi.string().label('Auth Token');
 const DEFAULT_TTL = 24 * 60 * 60 * 1000; // 1 day
 const DEFAULT_BYTES = 1024 * 1024 * 1024; // 1GB
 
+/**
+ * Resolve the build a credential is valid for.
+ *
+ * The API mints a short lived token carrying the `buildId` it issued the read
+ * for, so that claim identifies the build when present. Build and unzip_worker
+ * tokens instead identify their build through `username`, which is the claim
+ * the write path already checks.
+ * @method  getCredentialBuildId
+ * @param   {Object}  credentials  Decoded JWT for this request
+ * @returns {Number}               Build id the credential is valid for
+ */
+function getCredentialBuildId(credentials) {
+    return credentials.buildId === undefined ? credentials.username : credentials.buildId;
+}
+
 exports.plugin = {
     name: 'builds',
 
@@ -57,6 +72,13 @@ exports.plugin = {
                     const buildId = request.params.id;
                     const { artifact } = request.params;
                     const id = `${buildId}-${artifact}`;
+                    const credentialBuildId = getCredentialBuildId(request.auth.credentials);
+
+                    // Bind the read to the build the credential was issued for, the same way
+                    // the write path does. Without this any signed token reads any build.
+                    if (credentialBuildId !== buildId) {
+                        return boom.forbidden(`Credential only valid for ${credentialBuildId}`);
+                    }
 
                     let value;
                     let response;

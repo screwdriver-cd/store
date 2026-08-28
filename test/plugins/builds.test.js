@@ -99,6 +99,116 @@ describe('builds plugin test', () => {
                 });
         });
 
+        it('returns 200 if the api minted a token for this build', async () => {
+            const id = `${mockBuildID}-foo`;
+            const content = 'HELLO WORLD';
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, content);
+
+            return server
+                .inject({
+                    auth: {
+                        strategy: 'token',
+                        // Shape the API signs for artifact and log reads
+                        credentials: {
+                            buildId: mockBuildID,
+                            artifact: 'foo',
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/foo`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 200);
+                });
+        });
+
+        it('returns 403 if the credential is for another build', async () => {
+            const id = `${mockBuildID}-secret.txt`;
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, 'TOP-SECRET');
+
+            return server
+                .inject({
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: mockBuildID + 1,
+                            scope: ['build', 'user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/secret.txt`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 403);
+                    assert.notInclude(response.payload, 'TOP-SECRET');
+                });
+        });
+
+        it('returns 403 if the api minted the token for another build', async () => {
+            const id = `${mockBuildID}-secret.txt`;
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, 'TOP-SECRET');
+
+            return server
+                .inject({
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            buildId: mockBuildID + 1,
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/secret.txt`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 403);
+                    assert.notInclude(response.payload, 'TOP-SECRET');
+                });
+        });
+
+        it('returns 403 if the credential is not bound to any build', async () => {
+            const id = `${mockBuildID}-secret.txt`;
+            const cache = server.cache({
+                segment: 'builds',
+                expiresIn: 100,
+                shared: true
+            });
+
+            await cache.set(id, 'TOP-SECRET');
+
+            return server
+                .inject({
+                    auth: {
+                        strategy: 'token',
+                        credentials: {
+                            username: 'some-person',
+                            scope: ['user']
+                        }
+                    },
+                    url: `/builds/${mockBuildID}/secret.txt`
+                })
+                .then(response => {
+                    assert.equal(response.statusCode, 403);
+                    assert.notInclude(response.payload, 'TOP-SECRET');
+                });
+        });
+
         it('returns 404 if not found', () =>
             server
                 .inject({
@@ -694,6 +804,7 @@ describe('builds plugin test using s3', () => {
                 auth: {
                     strategy: 'token',
                     credentials: {
+                        buildId: mockBuildID,
                         scope: ['user']
                     }
                 }
