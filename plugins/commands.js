@@ -31,7 +31,8 @@ const AwsClient = require('../helpers/aws');
  * @returns {Promise<Number|null>}       Owning pipelineId, or null when the command has no record yet
  */
 async function getCommandOwner({ apiUrl, namespace, name, version, authorization }) {
-    const response = await globalThis.fetch(`${apiUrl}/v1/commands/${namespace}/${name}/${version}`, {
+    // The API serves command records under /v4, not /v1 (the store's own, unrelated route prefix).
+    const response = await globalThis.fetch(`${apiUrl}/v4/commands/${namespace}/${name}/${version}`, {
         method: 'GET',
         headers: { authorization },
         // A hung (not down) API would otherwise stall every write/delete; bound it.
@@ -314,7 +315,10 @@ exports.plugin = {
                     tags: ['api', 'commands'],
                     auth: {
                         strategies: ['token'],
-                        scope: ['build', 'user']
+                        // 'sdapi' is accepted here in preparation for the API to send an
+                        // explicitly-scoped service token instead of forwarding the caller's own
+                        // token; nothing mints an 'sdapi' token for this route yet.
+                        scope: ['build', 'user', 'sdapi', '!guest']
                     },
                     plugins: {
                         'hapi-swagger': {
