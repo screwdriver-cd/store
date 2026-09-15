@@ -255,7 +255,8 @@ describe('commands plugin test', () => {
                 auth: {
                     strategy: 'token',
                     credentials: {
-                        scope: ['user']
+                        scope: ['build'],
+                        pipelineId: 123
                     }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/1.2.5`
@@ -503,7 +504,8 @@ describe('commands plugin test using s3', () => {
                 auth: {
                     strategy: 'token',
                     credentials: {
-                        scope: ['user']
+                        scope: ['build'],
+                        pipelineId: 123
                     }
                 },
                 url: `/commands/${mockCommandNamespace}/foo/1.2.5`
@@ -687,11 +689,11 @@ describe('commands plugin ownership enforcement', () => {
             });
         });
 
-        it('skips the ownership lookup for user-scope deletes', () => {
+        it('rejects user-scope deletes', () => {
             return server
                 .inject(deleteOptions({ strategy: 'token', credentials: { scope: ['user'] } }))
                 .then(response => {
-                    assert.equal(response.statusCode, 204);
+                    assert.equal(response.statusCode, 403);
                     assert.notCalled(fetchStub);
                 });
         });
@@ -703,6 +705,30 @@ describe('commands plugin ownership enforcement', () => {
                     assert.equal(response.statusCode, 403);
                     assert.notCalled(fetchStub);
                 });
+        });
+
+        const sdapiAuth = (namespace = mockCommandNamespace, name = mockCommandName, pipelineId = 123) => ({
+            strategy: 'token',
+            credentials: {
+                scope: ['sdapi'],
+                pipelineId,
+                namespace,
+                name
+            }
+        });
+
+        it('deletes on an sdapi-attested token without an ownership lookup', () => {
+            return server.inject(deleteOptions(sdapiAuth())).then(response => {
+                assert.equal(response.statusCode, 204);
+                assert.notCalled(fetchStub);
+            });
+        });
+
+        it("rejects an sdapi token attested for a different command's namespace/name", () => {
+            return server.inject(deleteOptions(sdapiAuth('other-namespace'))).then(response => {
+                assert.equal(response.statusCode, 403);
+                assert.notCalled(fetchStub);
+            });
         });
     });
 });

@@ -270,15 +270,27 @@ exports.plugin = {
                 method: 'DELETE',
                 path: '/commands/{namespace}/{name}/{version}',
                 handler: async (request, h) => {
-                    const { pipelineId } = request.auth.credentials;
+                    const {
+                        scope,
+                        pipelineId,
+                        namespace: attestedNamespace,
+                        name: attestedName
+                    } = request.auth.credentials;
                     const { namespace, name, version } = request.params;
                     const id = `${namespace}-${name}-${version}`;
 
-                    // Build credentials carry a pipelineId; reject a delete of a
-                    // command owned by a different pipeline. User-scope deletes
-                    // arrive via the API, which authorizes them before
-                    // forwarding here and carry no pipelineId.
-                    if (pipelineId !== undefined && pipelineId !== null) {
+                    if (scope.includes('sdapi')) {
+                        // The API already ran its own ownership check (canRemove) before
+                        // minting this token, so trust its attestation of the owning
+                        // pipeline. Only confirm the attested target matches the request
+                        // path, so a token minted for one command can't be replayed
+                        // against another.
+                        if (attestedNamespace !== namespace || attestedName !== name) {
+                            throw boom.forbidden('Not allowed to delete this command');
+                        }
+                    } else {
+                        // Build credentials carry a pipelineId but not the target
+                        // command's owner, so ownership has to be verified independently.
                         await assertCommandOwnership({
                             request,
                             namespace,
@@ -315,10 +327,11 @@ exports.plugin = {
                     tags: ['api', 'commands'],
                     auth: {
                         strategies: ['token'],
-                        // 'sdapi' is accepted here in preparation for the API to send an
-                        // explicitly-scoped service token instead of forwarding the caller's own
-                        // token; nothing mints an 'sdapi' token for this route yet.
-                        scope: ['build', 'user', 'sdapi', '!guest']
+                        // The API now sends an explicitly-scoped, attested service token
+                        // (sdapi) for user-initiated deletes instead of forwarding the
+                        // caller's own token, so 'user' (and therefore 'guest') no longer
+                        // needs to be accepted here.
+                        scope: ['build', 'sdapi']
                     },
                     plugins: {
                         'hapi-swagger': {
