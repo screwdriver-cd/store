@@ -676,11 +676,31 @@ describe('commands plugin ownership enforcement', () => {
             });
         });
 
+        it('looks up ownership against the API v4 commands route', () => {
+            fetchStub.resolves(ownerResponse(123));
+
+            return server.inject(deleteOptions(buildAuth(123))).then(() => {
+                assert.calledWithMatch(
+                    fetchStub,
+                    `${apiUrl}/v4/commands/${mockCommandNamespace}/${mockCommandName}/${mockCommandVersion}`
+                );
+            });
+        });
+
         it('skips the ownership lookup for user-scope deletes', () => {
             return server
                 .inject(deleteOptions({ strategy: 'token', credentials: { scope: ['user'] } }))
                 .then(response => {
                     assert.equal(response.statusCode, 204);
+                    assert.notCalled(fetchStub);
+                });
+        });
+
+        it('rejects guest-scoped deletes', () => {
+            return server
+                .inject(deleteOptions({ strategy: 'token', credentials: { scope: ['user', 'guest'] } }))
+                .then(response => {
+                    assert.equal(response.statusCode, 403);
                     assert.notCalled(fetchStub);
                 });
         });
