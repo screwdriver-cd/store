@@ -18,6 +18,10 @@ httpd:
     tls:
         __name: HTTPD_TLS
         __format: json
+    # Hapi MIME configuration
+    mime:
+        __name: HTTPD_MIME
+        __format: json
 
 builds:
     # How long should builds stay around for

@@ -11,6 +11,13 @@ describe('server case', function () {
         ui: 'http://example.com',
         allowCors: []
     };
+    const mime = {
+        override: {
+            'application/octet-stream': {
+                compressible: false
+            }
+        }
+    };
 
     let hapiEngine;
     let server;
@@ -33,7 +40,8 @@ describe('server case', function () {
             try {
                 server = await hapiEngine({
                     httpd: {
-                        port: 12347
+                        port: 12347,
+                        mime
                     },
                     cache: {
                         engine: new Catbox()
@@ -67,6 +75,8 @@ describe('server case', function () {
                     assert.equal(response.headers['access-control-allow-origin'], ecosystem.ui);
                     assert.equal(response.statusCode, 200);
                     assert.include(response.request.info.host, '12347');
+                    assert.isFalse(server.mime.type('application/octet-stream').compressible);
+                    assert.isTrue(server.mime.type('text/plain').compressible);
                 });
         });
     });
