@@ -22,6 +22,27 @@ describe('server case', function () {
     let hapiEngine;
     let server;
 
+    const startServer = () =>
+        hapiEngine({
+            httpd: {
+                port: 12347,
+                mime
+            },
+            cache: {
+                engine: new Catbox()
+            },
+            auth: {
+                jwtPublicKey: '12345',
+                jwtMaxAge: '1h'
+            },
+            commands: {},
+            ecosystem,
+            caches: {
+                expiresInSec: 100,
+                maxByteSize: 1073741824
+            }
+        });
+
     beforeEach(() => {
         // eslint-disable-next-line global-require
         hapiEngine = require('../../lib/server');
@@ -38,25 +59,7 @@ describe('server case', function () {
     describe('positive cases', () => {
         it('does it with a different port', async () => {
             try {
-                server = await hapiEngine({
-                    httpd: {
-                        port: 12347,
-                        mime
-                    },
-                    cache: {
-                        engine: new Catbox()
-                    },
-                    auth: {
-                        jwtPublicKey: '12345',
-                        jwtMaxAge: '1h'
-                    },
-                    commands: {},
-                    ecosystem,
-                    caches: {
-                        expiresInSec: 100,
-                        maxByteSize: 1073741824
-                    }
-                });
+                server = await startServer();
             } catch (err) {
                 // Error should not be thrown
 
@@ -78,6 +81,40 @@ describe('server case', function () {
                     assert.isFalse(server.mime.type('application/octet-stream').compressible);
                     assert.isTrue(server.mime.type('text/plain').compressible);
                 });
+        });
+
+        it('compresses text/plain but not application/octet-stream', async () => {
+            const payload = 'a'.repeat(64 * 1024);
+
+            server = await startServer();
+            server.route([
+                {
+                    method: 'GET',
+                    path: '/compression-test/octet-stream',
+                    handler: (request, h) => h.response(payload).type('application/octet-stream')
+                },
+                {
+                    method: 'GET',
+                    path: '/compression-test/text',
+                    handler: (request, h) => h.response(payload).type('text/plain')
+                }
+            ]);
+
+            const request = url =>
+                server.inject({
+                    method: 'GET',
+                    url,
+                    headers: {
+                        'accept-encoding': 'gzip'
+                    }
+                });
+            const [octetStreamResponse, textResponse] = await Promise.all([
+                request('/compression-test/octet-stream'),
+                request('/compression-test/text')
+            ]);
+
+            assert.notProperty(octetStreamResponse.headers, 'content-encoding');
+            assert.equal(textResponse.headers['content-encoding'], 'gzip');
         });
     });
 
