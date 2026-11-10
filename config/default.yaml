@@ -28,6 +28,12 @@ httpd:
         #     -----BEGIN CERTIFICATE-----
         #     INSERT STUFF HERE
         #     -----END CERTIFICATE-----
+    # MIME type overrides passed to Hapi
+    mime:
+        override:
+            # Store responses can contain already-compressed binary data
+            'application/octet-stream':
+                compressible: false
 
 builds:
     # How long should builds stay around for
